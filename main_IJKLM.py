@@ -80,7 +80,7 @@ def run_experiment(
             print_log_message(language="Pyomo", n=n, df=df_pyomo)
 
     # JuMP
-    df_jump, df_intuitive_jump = run_julia("IJKLM", solve, repeats, number, time_limit)
+    df_jump, df_intuitive_jump = run_julia(solve, repeats, number, time_limit)
 
     # merge all results
     df = pd.concat(
@@ -110,5 +110,5 @@ if __name__ == "__main__":
             solve=solve,
             repeats=2,
             number=1,
-            time_limit=30,
+            time_limit=5,
         )

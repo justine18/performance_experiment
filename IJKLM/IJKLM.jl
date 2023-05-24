@@ -49,7 +49,13 @@ function intuitive_jump(I, IJK, JKL, KLM, solve)
 end
 
 function jump(I, IJK, JKL, KLM, solve)
-    model = Model()
+    model = if solve == "True"
+        direct_model(Gurobi.Optimizer())
+    else
+        Model()
+    end
+
+    set_string_names_on_creation(model, false)
 
     x_list = [
         (i, j, k, l, m)
@@ -60,14 +66,13 @@ function jump(I, IJK, JKL, KLM, solve)
 
     @variable(model, x[x_list] >= 0)
 
-    @constraint(
-        model,
-        [i in I],
-        sum(x[k] for k in x_list if k[1] == i) >= 0
-    )
+    for i in I
+        @constraint(model,
+            sum(x[k] for k in x_list if k[1] == i) >= 0
+        )
+    end
 
     if solve == "True"
-        set_optimizer(model, Gurobi.Optimizer)
         set_silent(model)
         optimize!(model)
     end

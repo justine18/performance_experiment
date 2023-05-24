@@ -77,7 +77,13 @@ function intuitive_jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
 end
 
 function jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
-    model = Model()
+    model = if solve == "True"
+        direct_model(Gurobi.Optimizer())
+    else
+        Model()
+    end
+
+    set_string_names_on_creation(model, false)
 
     x_list = [
         (i, j, k)
@@ -98,23 +104,27 @@ function jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
     @variable(model, y[y_list] >= 0)
     @variable(model, z[z_list] >= 0)
 
-    @constraint(model, production[(i, k) in IK], sum(
-        x[p] for p in x_list if p[1] == i && p[3] == k
-    ) >= sum(y[p] for p in y_list if p[1] == i && p[2] == k)
-    )
+    for (i, k) in IK
+        @constraint(model,
+            sum(
+                x[(i, j, k)]
+                for (ii, j) in IJ if ii == i
+                for (jj, kk) in JK if jj == j && kk == k
+            ) >= sum(y[(i, k, l)] for (kk, l) in KL if kk == k)
+        )
+    end
 
-    @constraint(model, transport[i in I, l in L], sum(
-        y[p] for p in y_list if p[1] == i && p[3] == l
-    ) >= sum(z[p] for p in z_list if p[1] == i && p[2] == l))
+    for i in I, l in L
+        @constraint(model,
+            sum(y[(i, k, l)] for (k, ll) in KL if ll == l) >=
+            sum(z[(i, l, m)] for (ll, m) in LM if ll == l))
+    end
 
-    @constraint(model, demand[i in I, m in M], sum(
-        z[p] for p in z_list if p[1] == i && p[3] == m
-    ) >= D[i, m])
-
-    # write_to_file(model, "fast.lp")
-
+    for i in I, m in M
+        @constraint(model, sum(z[(i, l, m)] for (l, mm) in LM if mm == m) >= D[i, m])
+    end
+    
     if solve == "True"
-        set_optimizer(model, Gurobi.Optimizer)
         set_silent(model)
         optimize!(model)
     end
