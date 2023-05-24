@@ -4,21 +4,25 @@ using DataFrames
 using BenchmarkTools
 using Gurobi
 
+function read_tuple_list(filename)
+    return [tuple(x...) for x in JSON.parsefile(filename)]
+end
+
 function read_fixed_data()
     N = open(JSON.parse, "supply_chain/data/data_N.json")
     L = open(JSON.parse, "supply_chain/data/data_L.json")
     M = open(JSON.parse, "supply_chain/data/data_M.json")
-    JK = open(JSON.parse, "supply_chain/data/data_JK.json")
-    KL = open(JSON.parse, "supply_chain/data/data_KL.json")
-    LM = open(JSON.parse, "supply_chain/data/data_LM.json")
+    JK = read_tuple_list("supply_chain/data/data_JK.json")
+    KL = read_tuple_list("supply_chain/data/data_KL.json")
+    LM = read_tuple_list("supply_chain/data/data_LM.json")
     return N, L, M, JK, KL, LM
 end
 
 function read_variable_data(n)
     I = ["i$i" for i in 1:n]
-    IJ = open(JSON.parse, "supply_chain/data/data_IJ_$n.json")
-    IK = open(JSON.parse, "supply_chain/data/data_IK_$n.json")
-    d = open(JSON.parse, "supply_chain/data/data_D_$n.json")
+    IJ = read_tuple_list("supply_chain/data/data_IJ_$n.json")
+    IK = read_tuple_list("supply_chain/data/data_IK_$n.json")
+    d = read_tuple_list("supply_chain/data/data_D_$n.json")
     D = Dict()
     for x in d
         D[(x[1], x[2])] = x[3]
