@@ -4,16 +4,20 @@ using DataFrames
 using BenchmarkTools
 using Gurobi
 
+function read_tuple_list(filename)
+    return [tuple(x...) for x in JSON.parsefile(filename)]
+end
+
 function read_fixed_data()
     N = open(JSON.parse, "IJKLM/data/data_N.json")
-    JKL = open(JSON.parse, "IJKLM/data/data_JKL.json")
-    KLM = open(JSON.parse, "IJKLM/data/data_KLM.json")
+    JKL = read_tuple_list("IJKLM/data/data_JKL.json")
+    KLM = read_tuple_list("IJKLM/data/data_KLM.json")
     return N, JKL, KLM
 end
 
 function read_variable_data(n)
     I = ["i$i" for i in 1:n]
-    IJK = open(JSON.parse, "IJKLM/data/data_IJK_$n.json")
+    IJK = read_tuple_list("IJKLM/data/data_IJK_$n.json")
     return I, IJK
 end
 
