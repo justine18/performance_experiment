@@ -3,6 +3,7 @@ import logging
 import timeit
 import pandas as pd
 import numpy as np
+import itertools, operator
 
 logging.getLogger("pyomo.core").setLevel(logging.ERROR)
 
@@ -121,9 +122,13 @@ def pyomo(I, IJK, JKL, KLM, solve):
         (i, j, k, l, m) for (i, j, k) in IJK for l in JKL[j, k] for m in KLM[k, l]
     ]
 
-    constraint_dict_i = {
-        ii: ((i, j, k, l, m) for (i, j, k, l, m) in x_list if i == ii) for ii in I
-    }
+    constraint_dict_i = {i: [] for i in I}
+    constraint_dict_i.update(
+        {
+            i: list(j)
+            for i, j in itertools.groupby(sorted(x_list), operator.itemgetter(0))
+        }
+    )
 
     model.x_list = pyo.Set(initialize=x_list)
     model.c_dict_i = pyo.Set(model.I, initialize=constraint_dict_i)
@@ -142,4 +147,6 @@ def pyomo(I, IJK, JKL, KLM, solve):
 
 
 def ei_rule(model, i):
-    return sum(model.x[i, j, k, l, m] for i, j, k, l, m in model.c_dict_i[i]) >= 0
+    if not model.c_dict_i[i]:
+        return pyo.Constraint.Skip
+    return sum(model.x[idx] for idx in model.c_dict_i[i]) >= 0
