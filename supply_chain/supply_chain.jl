@@ -3,6 +3,7 @@ using JSON
 using DataFrames
 using BenchmarkTools
 using Gurobi
+using SparseVariables
 
 function read_tuple_list(filename)
     return [tuple(x...) for x in JSON.parsefile(filename)]
@@ -29,6 +30,124 @@ function read_variable_data(n)
     end
     return I, IJ, IK, D
 end
+
+function deriveJK(IJ, IK, JK, KL)
+    J =[]
+    K = []
+    for (j,k) in JK
+        push!(J,j)
+        push!(K,k)
+    end
+    for (k, _) in KL
+        push!(K, k)
+    end
+    for (_, j) in IJ
+        push!(J,j)
+    end
+    for (_, k) in IK
+        push!(K, k)
+    end
+    return sort( unique(J), by=x->parse(Int, x[2:end])), sort(unique(K), by=x->parse(Int, x[2:end]))
+end
+
+function sparse_jump(I, J, K, L, M, IJ, JK, IK, KL, LM, D, solve)
+    model = Model()
+
+    @variable(model, x[i=I ,j=J, k=K] >= 0, container=IndexedVarArray)
+    for (i, j) in IJ, (jj, k) in JK
+        if jj == j
+            for (ii, kk) in IK 
+                if ii == i && kk == k
+                    unsafe_insertvar!(x, i, j, k) # unsafe_insertvar! to skip checking valid index/duplicates
+                end
+            end
+        end
+    end
+    @variable(model, y[i=I, k=K, l=L] >= 0, container=IndexedVarArray)
+    for i in I, (k, l) in KL
+        unsafe_insertvar!(y, i, k, l)
+    end
+    @variable(model, z[i=I, l=L, m=M] >= 0, container=IndexedVarArray)
+    for i in I, (l, m) in LM
+        unsafe_insertvar!(z, i, l, m)
+    end
+
+    for (i,k) in IK
+        @constraint(model,
+        sum(
+            x[i, j, k]
+            for (ii, j) in IJ if ii == i
+            for (jj, kk) in JK if jj == j && kk == k
+        ) >= sum(y[i, k, l] for (kk, l) in KL if kk == k)
+        )
+    end
+
+    for i in I, l in L
+        @constraint(model, 
+        sum(
+            y[i, k, l] for (k, ll) in KL if ll == l
+        ) >= sum(z[i, l, m] for (ll, m) in LM if ll == l))
+    end
+
+    for i in I, m in M
+    @constraint(model, 
+    sum(
+        z[i, l, m] for (l, mm) in LM if mm == m
+    ) >= D[(i, m)])
+    end
+    # write_to_file(model, "sparse.lp")
+
+    if solve == "True"
+        set_optimizer(model, Gurobi.Optimizer)
+        set_silent(model)
+        optimize!(model)
+    end
+end
+
+function slice_jump(I, J, K, L, M, IJ, JK, IK, KL, LM, D, solve)
+    model = Model()
+
+    @variable(model, x[i=I ,j=J, k=K] >= 0, container=IndexedVarArray)
+    for (i, j) in IJ, (jj, k) in JK
+        if jj == j
+            for (ii, kk) in IK 
+                if ii == i && kk == k
+                    unsafe_insertvar!(x, i, j, k) # unsafe_insertvar! to skip checking valid index/duplicates
+                end
+            end
+        end
+    end
+    @variable(model, y[i=I, k=K, l=L] >= 0, container=IndexedVarArray)
+    for i in I, (k, l) in KL
+        unsafe_insertvar!(y, i, k, l)
+    end
+    @variable(model, z[i=I, l=L, m=M] >= 0, container=IndexedVarArray)
+    for i in I, (l, m) in LM
+        unsafe_insertvar!(z, i, l, m)
+    end
+
+    for (i, k) in IK
+        @constraint(model, sum(x[i, :, k]) >= sum(y[i, k, :]))
+    end
+    
+    for i in I, l in L
+        @constraint(model, sum(y[i, :, l]) >= sum(z[i, l, :]))
+    end
+    
+    for i in I, m in M
+        @constraint(model, sum(z[i, :, m]) >= D[i,m])
+    end
+
+    # write_to_file(model, "slice.lp")
+
+    if solve == "True"
+        set_optimizer(model, Gurobi.Optimizer)
+        set_silent(model)
+        optimize!(model)
+    end
+end
+
+
 
 function intuitive_jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
     model = Model()
@@ -143,6 +262,8 @@ time_limit = parse(Int64, ARGS[4])
 N, L, M, JK, KL, LM = read_fixed_data()
 
 t = DataFrame(I=Int[], Language=String[], MinTime=Float64[], MeanTime=Float64[], MedianTime=Float64[])
+ts = DataFrame(I=Int[], Language=String[], MinTime=Float64[], MeanTime=Float64[], MedianTime=Float64[])
+tsl = DataFrame(I=Int[], Language=String[], MinTime=Float64[], MeanTime=Float64[], MedianTime=Float64[])
 tt = DataFrame(I=Int[], Language=String[], MinTime=Float64[], MeanTime=Float64[], MedianTime=Float64[])
 
 for n in N
@@ -153,6 +274,20 @@ for n in N
         push!(t, (n, "JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
         println("JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
     end
+
+    J, K = deriveJK(IJ, IK, JK, KL)
+    if maximum(ts.MinTime; init=0) < time_limit
+        r = @benchmark sparse_jump($I, $J, $K, $L, $M, $IJ, $JK, $IK, $KL, $LM, $D, $solve) samples = samples evals = evals
+        push!(ts, (n, "Sparse JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
+        println("Sparse JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
+    end
+
+    if maximum(tsl.MinTime; init=0) < time_limit
+        r = @benchmark slice_jump($I, $J, $K, $L, $M, $IJ, $JK, $IK, $KL, $LM, $D, $solve) samples = samples evals = evals
+        push!(tsl, (n, "Slice JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
+        println("Slice JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
+    end
+
 
     if maximum(tt.MinTime; init=0) < time_limit
         rr = @benchmark intuitive_jump($I, $L, $M, $IJ, $JK, $IK, $KL, $LM, $D, $solve) samples = samples evals = evals
