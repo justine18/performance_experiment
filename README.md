@@ -1,6 +1,6 @@
 # Performance Experiment - Pyomo vs JuMP
 
-This repository tries to make a fair comparison between the performance of Pyomo and JuMP. Performance is measures in model generation time and model generation plus solve time.
+This repository tries to make a fair comparison between the performance of Pyomo and JuMP. Performance is measured in model generation time and model generation plus solve time.
 
 ## Example IJKLM
 
