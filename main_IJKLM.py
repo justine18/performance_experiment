@@ -5,6 +5,7 @@ import numpy as np
 import IJKLM.data_generation as data
 import visualization
 from help import (
+    create_directories,
     create_data_frame,
     incremental_range,
     save_to_json,
@@ -102,6 +103,8 @@ def run_experiment(
 if __name__ == "__main__":
     CI = 8000
     CJ = 20
+
+    create_directories("IJKLM")
 
     for solve in [False, True]:
         run_experiment(

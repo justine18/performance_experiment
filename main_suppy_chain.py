@@ -5,6 +5,7 @@ import numpy as np
 import supply_chain.data_generation as data
 import visualization
 from help import (
+    create_directories,
     create_data_frame,
     incremental_range,
     save_to_json,
@@ -102,9 +103,19 @@ def run_experiment(
     # plot results
     visualization.plot_results(df, cardinality_of_j, solve, "supply_chain")
 
+
 if __name__ == "__main__":
     CI = 8000
     CJ = 20
 
+    create_directories("supply_chain")
+
     for solve in [False, True]:
-        run_experiment(cardinality_of_i=CI, cardinality_of_j=CJ, solve=solve, repeats=2, number=1, time_limit=5)
+        run_experiment(
+            cardinality_of_i=CI,
+            cardinality_of_j=CJ,
+            solve=solve,
+            repeats=2,
+            number=1,
+            time_limit=5,
+        )
