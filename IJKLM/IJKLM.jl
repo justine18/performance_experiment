@@ -66,11 +66,11 @@ function jump(I, IJK, JKL, KLM, solve)
 
     @variable(model, x[x_list] >= 0)
 
-    for i in I
-        @constraint(model,
-            sum(x[k] for k in x_list if k[1] == i) >= 0
-        )
+    x_filter_i = Dict(i => Any[] for i in I)
+    for xi in x_list
+        push!(x_filter_i[xi[1]], xi)
     end
+    @constraint(model, [i in I], sum(x[k] for k in x_filter_i[i]) >= 0)
 
     if solve == "True"
         set_silent(model)

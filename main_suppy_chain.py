@@ -5,6 +5,7 @@ import numpy as np
 import supply_chain.data_generation as data
 import visualization
 from help import (
+    create_directories,
     create_data_frame,
     incremental_range,
     save_to_json,
@@ -125,6 +126,8 @@ def run_experiment(
 if __name__ == "__main__":
     CI = 10000
     CJ = 20
+
+    create_directories("supply_chain")
 
     for solve in [False, True]:
         run_experiment(
