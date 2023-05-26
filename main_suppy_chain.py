@@ -14,7 +14,7 @@ from help import (
     print_log_message,
     save_results,
 )
-from supply_chain.run_pyomo import run_intuitive_pyomo
+from supply_chain.run_pyomo import run_intuitive_pyomo, run_pyomo
 from supply_chain.run_jump import run_julia
 
 
@@ -83,6 +83,25 @@ def run_experiment(
             df_intuitive_pyomo = process_results(rr, df_intuitive_pyomo)
             print_log_message(language="Intuitive Pyomo", n=n, df=df_intuitive_pyomo)
 
+        # Pyomo
+        if below_time_limit(df_pyomo, time_limit):
+            rr = run_pyomo(
+                I=I,
+                L=L,
+                M=M,
+                IJ=ij_tuple,
+                JK=jk_tuple,
+                IK=ik_tuple,
+                KL=kl_tuple,
+                LM=lm_tuple,
+                D=d_dict,
+                solve=solve,
+                repeats=repeats,
+                number=number,
+            )
+            df_pyomo = process_results(rr, df_pyomo)
+            print_log_message(language="Pyomo", n=n, df=df_pyomo)
+
     # JuMP
     df_jump, df_intuitive_jump = run_julia(solve, repeats, number, time_limit)
 
@@ -92,7 +111,7 @@ def run_experiment(
             df_jump,
             df_intuitive_jump,
             df_intuitive_pyomo,
-            # df_pyomo,
+            df_pyomo,
         ]
     ).reset_index(drop=True)
 
@@ -102,9 +121,17 @@ def run_experiment(
     # plot results
     visualization.plot_results(df, cardinality_of_j, solve, "supply_chain")
 
+
 if __name__ == "__main__":
-    CI = 8000
+    CI = 10000
     CJ = 20
 
     for solve in [False, True]:
-        run_experiment(cardinality_of_i=CI, cardinality_of_j=CJ, solve=solve, repeats=2, number=1, time_limit=5)
+        run_experiment(
+            cardinality_of_i=CI,
+            cardinality_of_j=CJ,
+            solve=solve,
+            repeats=3,
+            number=1,
+            time_limit=5,
+        )
