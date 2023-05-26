@@ -89,7 +89,7 @@ def intuitive_pyomo(I, L, M, IJ, JK, IK, KL, LM, D, solve):
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model)
+        opt.solve(model, timelimit=0)
 
 
 def intuitive_production_rule(model, i, k):
@@ -237,7 +237,7 @@ def pyomo(I, L, M, IJ, JK, IK, KL, LM, D, solve):
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model)
+        opt.solve(model, timelimit=0)
 
 
 def production_rule(model, i, k):

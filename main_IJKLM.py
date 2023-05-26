@@ -111,7 +111,7 @@ if __name__ == "__main__":
             cardinality_of_i=CI,
             cardinality_of_j=CJ,
             solve=solve,
-            repeats=2,
+            repeats=3,
             number=1,
             time_limit=5,
         )

@@ -71,6 +71,7 @@ function intuitive_jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
 
     if solve == "True"
         set_optimizer(model, Gurobi.Optimizer)
+        set_time_limit_sec(model, 0)
         set_silent(model)
         optimize!(model)
     end
@@ -126,6 +127,7 @@ function jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
     
     if solve == "True"
         set_silent(model)
+        set_time_limit_sec(model, 60.0)
         optimize!(model)
     end
 end

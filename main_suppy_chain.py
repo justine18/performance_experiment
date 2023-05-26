@@ -134,7 +134,7 @@ if __name__ == "__main__":
             cardinality_of_i=CI,
             cardinality_of_j=CJ,
             solve=solve,
-            repeats=3,
+            repeats=4,
             number=1,
             time_limit=5,
         )
