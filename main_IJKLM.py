@@ -55,10 +55,11 @@ def run_experiment(
         save_to_json(ijk_tuple, "IJK", f"_{n}", "IJKLM")
         
         # GAMS
-        data_to_gams(I, J, K, L, M, IJK, JKL, KLM)
-        rr = run_gams(solve, n, repeats=repeats, number=number)
-        df_gams = process_results(rr, df_gams)
-        print('GAMS done', n)
+        if below_time_limit(df_gams, time_limit):
+            data_to_gams(I, J, K, L, M, IJK, JKL, KLM)
+            rr = run_gams(solve, n, repeats=repeats, number=number)
+            df_gams = process_results(rr, df_gams)
+            print_log_message(language='GAMS', n=n, df=df_gams)
 
         # Intuitive Pyomo
         if below_time_limit(df_intuitive_pyomo, time_limit):
@@ -110,7 +111,7 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    CI = 8000
+    CI = 20000
     CJ = 20
 
     create_directories("IJKLM")

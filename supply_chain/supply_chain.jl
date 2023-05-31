@@ -127,7 +127,7 @@ function jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
     
     if solve == "True"
         set_silent(model)
-        set_time_limit_sec(model, 60.0)
+        set_time_limit_sec(model, 0)
         optimize!(model)
     end
 end

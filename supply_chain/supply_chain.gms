@@ -1,5 +1,5 @@
 $eval start jnow
-option lp=Gurobi, limrow=0, limcol=0, solprint=silent;
+option lp=Gurobi, limrow=0, limcol=0, solprint=silent, reslim=0;
 *option lp=Gurobi, limrow=1e9, limcol=1e9;
 
 $if not set GDXdata $set GDXdata 'supply_chain/data/data.gdx'
