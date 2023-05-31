@@ -21,7 +21,7 @@ def create_fixed_data(m):
         columns=["value"],
     ).reset_index()
 
-    return J, K, jkl, klm
+    return J, K, L, M, jkl, klm
 
 
 def create_variable_data(n, j, k):
