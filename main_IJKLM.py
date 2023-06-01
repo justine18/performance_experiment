@@ -14,6 +14,7 @@ from help import (
     print_log_message,
     save_results,
 )
+from IJKLM.run_gurobipy import run_intuitive_gurobi, run_gurobi
 from IJKLM.run_pyomo import run_intuitive_pyomo, run_pyomo
 from IJKLM.run_jump import run_julia
 
@@ -29,6 +30,8 @@ def run_experiment(
     df_intuitive_jump = create_data_frame()
     df_intuitive_pyomo = create_data_frame()
     df_pyomo = create_data_frame()
+    df_intuitive_gurobi = create_data_frame()
+    df_gurobi = create_data_frame()
 
     # define the x axis
     N = list(incremental_range(100, cardinality_of_i + 1, 100, 100))
@@ -51,6 +54,20 @@ def run_experiment(
 
         # save data to json for JuMP
         save_to_json(ijk_tuple, "IJK", f"_{n}", "IJKLM")
+
+        # Intuitive Gurobi
+        if below_time_limit(df_intuitive_gurobi, time_limit):
+            rr = run_intuitive_gurobi(I, ijk_tuple, jkl_tuple, klm_tuple, solve,
+                                    repeats=repeats, number=number)
+            df_intuitive_gurobi = process_results(rr, df_intuitive_gurobi)
+            print_log_message(language='Intuitive GurobiPy', n=n, df=df_intuitive_gurobi)
+
+        # Gurobi
+        if below_time_limit(df_gurobi, time_limit):
+            rr = run_gurobi(
+                I, ijk_tuple, jkl_tuple, klm_tuple, solve, repeats=repeats, number=number)
+            df_gurobi = process_results(rr, df_gurobi)
+            print_log_message(language='GurobiPy', n=n, df=df_gurobi)
 
         # Intuitive Pyomo
         if below_time_limit(df_intuitive_pyomo, time_limit):
@@ -90,6 +107,8 @@ def run_experiment(
             df_intuitive_jump,
             df_intuitive_pyomo,
             df_pyomo,
+            df_intuitive_gurobi,
+            df_gurobi
         ]
     ).reset_index(drop=True)
 

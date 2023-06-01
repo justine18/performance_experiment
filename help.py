@@ -44,7 +44,7 @@ def process_results(r, res_df):
 
 def print_log_message(language, n, df):
     # define a standardized log
-    log = "{language:<17} done {n:>6} in {time:>}s"
+    log = "{language:<19} done {n:>6} in {time:>}s"
     print(
         (
             log.format(
