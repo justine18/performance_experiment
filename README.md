@@ -33,22 +33,23 @@ $$\min F = 1$$
 
 $$\sum_{j:(i,j) \in \mathcal{IJ} \ \land \ (j,k) \in \mathcal{JK}} x_{ijk} \ge \sum_{l:(k,l) \in \mathcal{KL}} y_{ikl} \hspace{1cm} \forall \ (i,k) \in \mathcal{IK} $$
 
-$$\sum_{k:(k,l) \in \mathcal{KL}} y_{ikl} \ge \sum_{m:(l,m) \in \mathcal{LM}} z_{ilm} \hspace{1cm} \forall \ i \in \mathcal{I}, l \in \mathcal{L} $$
+$$\sum_{k:(k,l) \in \mathcal{KL}} y_{ikl} \ge \sum_{m:(l,m) \in \mathcal{LM}} z_{ilm} \hspace{1cm} \forall \ (i,l) \in \mathcal{IL} $$
 
-$$\sum_{l:(l,m) \in \mathcal{LM}} z_{ilm} \ge d_{im} \hspace{1cm} \forall \ i \in \mathcal{I}, m \in \mathcal{M} $$
+$$\sum_{l:(l,m) \in \mathcal{LM}} z_{ilm} \ge d_{im} \hspace{1cm} \forall \ (i,m) \in \mathcal{IM}$$
 
 | Sets                |             |
 | ------------------- | --------    |
 | $i \in \mathcal{I}$ | products    |
-| $j \in \mathcal{J}$ | machines    |
+| $j \in \mathcal{J}$ | production units    |
 | $k \in \mathcal{K}$ | production plants   |
 | $l \in \mathcal{L}$ | distribution centers |
 | $m \in \mathcal{M}$ | customers |
-| $\mathcal{IJ}$ | set of products $i$ that can be processed by machine $j$ |
-| $\mathcal{JK}$ | set of machines $j$ that are available at plant $k$ |
 | $\mathcal{IK}$ | set of plants $k$ able to produce product $i$ |
-| $\mathcal{KL}$ | set of plant $k$ that can ship products to distribution center $l$ |
-| $\mathcal{LM}$ | set of distribution centers $l$ able to supply customer $m$ |
+| $\mathcal{IL}$ | set of products $i$ that can be stored in distribution center $l$ |
+| $\mathcal{IM}$ | set of products $i$ that are ordered by customer $m$ |
+| $\mathcal{IJK}$ | set of products $i$ that can be processed by production unit $j$ available at plant $k$ |
+| $\mathcal{IKL}$ | set of products $i$ that can be manufactured at plant $k$ and stored in distribution center $l$ |
+| $\mathcal{ILM}$ | set of products $i$ stored in distribution center $l$ and able to be supplied to customer $m$ |
 
 
 | Parameters | |
@@ -57,7 +58,7 @@ $$\sum_{l:(l,m) \in \mathcal{LM}} z_{ilm} \ge d_{im} \hspace{1cm} \forall \ i \i
 
 | Variables | |
 | ------------------- | --------    |
-| $x_{ijk}$ | production quantity of product $i$ on machine $j$ and plant $k$ |
+| $x_{ijk}$ | production quantity of product $i$ on production unit $j$ and plant $k$ |
 | $y_{ikl}$ | shipping quantity of product $i$ from plant $k$ to distribution center $l$ |
 | $z_{ilm}$ | delivery quantity of product $i$ from distribution center $l$ to customer $m$ |
 
