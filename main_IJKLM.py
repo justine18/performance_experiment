@@ -14,6 +14,7 @@ from help import (
     print_log_message,
     save_results,
 )
+from IJKLM.run_gams import data_to_gams, run_gams
 from IJKLM.run_pyomo import run_intuitive_pyomo, run_pyomo
 from IJKLM.run_jump import run_julia
 
@@ -29,12 +30,13 @@ def run_experiment(
     df_intuitive_jump = create_data_frame()
     df_intuitive_pyomo = create_data_frame()
     df_pyomo = create_data_frame()
+    df_gams = create_data_frame()
 
     # define the x axis
     N = list(incremental_range(100, cardinality_of_i + 1, 100, 100))
 
     # create fixed data and convert to tuples and dicts
-    J, K, JKL, KLM = data.create_fixed_data(m=cardinality_of_j)
+    J, K, L, M, JKL, KLM = data.create_fixed_data(m=cardinality_of_j)
     jkl_tuple, klm_tuple = data.fixed_data_to_tuples(JKL, KLM)
     jkl_dict, klm_dict = data.fixed_data_to_dicts(jkl_tuple, klm_tuple)
 
@@ -51,6 +53,13 @@ def run_experiment(
 
         # save data to json for JuMP
         save_to_json(ijk_tuple, "IJK", f"_{n}", "IJKLM")
+        
+        # GAMS
+        if below_time_limit(df_gams, time_limit):
+            data_to_gams(I, J, K, L, M, IJK, JKL, KLM)
+            rr = run_gams(solve, n, repeats=repeats, number=number)
+            df_gams = process_results(rr, df_gams)
+            print_log_message(language='GAMS', n=n, df=df_gams)
 
         # Intuitive Pyomo
         if below_time_limit(df_intuitive_pyomo, time_limit):
@@ -90,6 +99,7 @@ def run_experiment(
             df_intuitive_jump,
             df_intuitive_pyomo,
             df_pyomo,
+            df_gams
         ]
     ).reset_index(drop=True)
 
@@ -101,7 +111,7 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    CI = 8000
+    CI = 20000
     CJ = 20
 
     create_directories("IJKLM")

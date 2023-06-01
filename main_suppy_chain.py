@@ -15,6 +15,7 @@ from help import (
     print_log_message,
     save_results,
 )
+from supply_chain.run_gams import data_to_gams, run_gams
 from supply_chain.run_pyomo import run_intuitive_pyomo, run_pyomo
 from supply_chain.run_jump import run_julia
 
@@ -30,6 +31,7 @@ def run_experiment(
     df_intuitive_jump = create_data_frame()
     df_intuitive_pyomo = create_data_frame()
     df_pyomo = create_data_frame()
+    df_gams = create_data_frame()
 
     # define the x axis
     N = list(incremental_range(100, cardinality_of_i + 1, 100, 100))
@@ -61,6 +63,13 @@ def run_experiment(
         save_to_json(kl_tuple, "KL", f"_{n}", "supply_chain")
         save_to_json(lm_tuple, "LM", f"_{n}", "supply_chain")
         save_to_json_d(d_dict, "D", f"_{n}", "supply_chain")
+
+        # GAMS
+        if below_time_limit(df_gams, time_limit):
+            data_to_gams(I, J, K, L, M, IJ, JK, IK, KL, LM, D)
+            rr = run_gams(solve, n, repeats=repeats, number=number)
+            df_gams = process_results(rr, df_gams)
+            print_log_message(language="GAMS", n=n, df=df_gams)
 
         # Intuitive Pyomo
         if below_time_limit(df_intuitive_pyomo, time_limit):
@@ -105,12 +114,7 @@ def run_experiment(
 
     # merge all results
     df = pd.concat(
-        [
-            df_jump,
-            df_intuitive_jump,
-            df_intuitive_pyomo,
-            df_pyomo,
-        ]
+        [df_jump, df_intuitive_jump, df_intuitive_pyomo, df_pyomo, df_gams]
     ).reset_index(drop=True)
 
     # save results
