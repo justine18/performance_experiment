@@ -74,7 +74,11 @@ def create_variable_data(n, J, K, L, M):
     IL = set([(i, l) for i, j, k, l, m in IJKLM])
     IM = set([(i, m) for i, j, k, l, m in IJKLM])
 
+    # IKL, ILM
+    IKL = set([(i, k, l) for i, j, k, l, m in IJKLM])
+    ILM = set([(i, l, m) for i, j, k, l, m in IJKLM])
+
     # Demand
     D = {(i, m): random.randint(0, 100) for i, m in IM}
 
-    return I, IJ, IK, JK, KL, LM, D
+    return I, IK, IL, IM, IJK, IKL, ILM, D
