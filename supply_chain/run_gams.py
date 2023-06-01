@@ -15,15 +15,18 @@ def data_to_gams(I, J, K, L, M, IJ, JK, IK, KL, LM, D):
     l = c.addSet("l", records=L)
     m = c.addSet("m", records=M)
 
-    c.addSet("IJ", [i, j], records=IJ[IJ["value"] == 1])
-    c.addSet("JK", [j, k], records=JK[JK["value"] == 1])
-    c.addSet("IK", [i, k], records=IK[IK["value"] == 1])
-    c.addSet("KL", [k, l], records=KL[KL["value"] == 1])
-    c.addSet("LM", [l, m], records=LM[LM["value"] == 1])
+    c.addSet("IJ", [i, j], records=IJ)
+    c.addSet("JK", [j, k], records=JK)
+    c.addSet("IK", [i, k], records=IK)
+    c.addSet("KL", [k, l], records=KL)
+    c.addSet("LM", [l, m], records=LM)
 
     # create parameter
     c.addParameter("time")
-    c.addParameter("d", [i, m], records=D)
+    df_d = pd.DataFrame(
+        [(i, m, D[i, m]) for i in I for m in M], columns=["i", "m", "value"]
+    )
+    c.addParameter("d", [i, m], records=df_d)
 
     # create variables
     c.addVariable("f")

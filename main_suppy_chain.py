@@ -66,7 +66,7 @@ def run_experiment(
 
         # GAMS
         if below_time_limit(df_gams, time_limit):
-            data_to_gams(I, J, K, L, M, IJ, JK, IK, KL, LM, D)
+            data_to_gams(I, J, K, L, M, ij_tuple, jk_tuple, ik_tuple, kl_tuple, lm_tuple, d_dict)
             rr = run_gams(solve, n, repeats=repeats, number=number)
             df_gams = process_results(rr, df_gams)
             print_log_message(language="GAMS", n=n, df=df_gams)
