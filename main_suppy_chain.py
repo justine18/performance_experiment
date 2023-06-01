@@ -15,7 +15,7 @@ from help import (
     print_log_message,
     save_results,
 )
-from supply_chain.run_gams import data_to_gams, run_gams
+from supply_chain.run_gams import run_gams
 from supply_chain.run_pyomo import run_intuitive_pyomo, run_pyomo
 from supply_chain.run_jump import run_julia
 
@@ -69,8 +69,24 @@ def run_experiment(
 
         # GAMS
         if below_time_limit(df_gams, time_limit):
-            data_to_gams(I, J, K, L, M, ij_tuple, jk_tuple, ik_tuple, kl_tuple, lm_tuple, d_dict)
-            rr = run_gams(solve, n, repeats=repeats, number=number)
+            rr = run_gams(
+                I=I,
+                J=J,
+                K=K,
+                L=L,
+                M=M,
+                IK=ik_tuple,
+                IL=il_tuple,
+                IM=im_tuple,
+                IJK=ijk_tuple,
+                IKL=ikl_tuple,
+                ILM=ilm_tuple,
+                D=d_dict,
+                solve=solve,
+                N=n,
+                repeats=repeats,
+                number=number,
+            )
             df_gams = process_results(rr, df_gams)
             print_log_message(language="GAMS", n=n, df=df_gams)
 

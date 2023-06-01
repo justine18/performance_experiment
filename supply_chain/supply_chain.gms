@@ -9,9 +9,9 @@ $declareAndLoad '%GDXdata%'
 Equations obj, production, transportation, demand;
 
 obj.. f =e= 1;
-production(IK(i,k)).. sum((IJ(i,j),JK(j,k)), x(i,j,k)) =g= sum(KL(k,l), y(i,k,l));
-transportation(i,l).. sum(KL(k,l), y(i,k,l)) =g= sum(LM(l,m), z(i,l,m));
-demand(i,m).. sum(LM(l,m), z(i,l,m)) =g= d(i,m);
+production(IK(i,k)).. sum(IJK(i,j,k), x(i,j,k)) =g= sum(IKL(i,k,l), y(i,k,l));
+transportation(IL(i,l)).. sum(IKL(i,k,l), y(i,k,l)) =g= sum(ILM(i,l,m), z(i,l,m));
+demand(IM(i,m)).. sum(ILM(i,l,m), z(i,l,m)) =g= d(i,m);
 
 model mi /all/;
 
@@ -24,7 +24,7 @@ fix = jnow - %start%;
 loop (r, 
     startn = jnow;
     loop (n, 
-        execute_load '%GDXdata%', IJ,JK,IK,KL,LM;
+        execute_load '%GDXdata%', IK,IL,IM,IJK,IKL,ILM,d;
         $$if not set solve mi.JustScrDir = 1
         solve mi minimizing f using lp;
     );

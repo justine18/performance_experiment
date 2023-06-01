@@ -5,7 +5,7 @@ import numpy as np
 
 
 ########## GAMS ##########
-def data_to_gams(I, J, K, L, M, IJ, JK, IK, KL, LM, D):
+def data_to_gams(I, J, K, L, M, IK, IL, IM, IJK, IKL, ILM, D):
     c = gt.Container()
 
     # create sets
@@ -15,17 +15,16 @@ def data_to_gams(I, J, K, L, M, IJ, JK, IK, KL, LM, D):
     l = c.addSet("l", records=L)
     m = c.addSet("m", records=M)
 
-    c.addSet("IJ", [i, j], records=IJ)
-    c.addSet("JK", [j, k], records=JK)
     c.addSet("IK", [i, k], records=IK)
-    c.addSet("KL", [k, l], records=KL)
-    c.addSet("LM", [l, m], records=LM)
+    c.addSet("IL", [i, l], records=IL)
+    c.addSet("IM", [i, m], records=IM)
+    c.addSet("IJK", [i, j, k], records=IJK)
+    c.addSet("IKL", [i, k, l], records=IKL)
+    c.addSet("ILM", [i, l, m], records=ILM)
 
     # create parameter
     c.addParameter("time")
-    df_d = pd.DataFrame(
-        [(i, m, D[i, m]) for i in I for m in M], columns=["i", "m", "value"]
-    )
+    df_d = pd.DataFrame([(i, m, D[i, m]) for i, m in IM], columns=["i", "m", "value"])
     c.addParameter("d", [i, m], records=df_d)
 
     # create variables
@@ -37,7 +36,11 @@ def data_to_gams(I, J, K, L, M, IJ, JK, IK, KL, LM, D):
     c.write("supply_chain/data/data.gdx")
 
 
-def run_gams(solve, N, repeats, number):
+def run_gams(I, J, K, L, M, IK, IL, IM, IJK, IKL, ILM, D, solve, N, repeats, number):
+    data_to_gams(
+        I=I, J=J, K=K, L=L, M=M, IK=IK, IL=IL, IM=IM, IJK=IJK, IKL=IKL, ILM=ILM, D=D
+    )
+
     if solve:
         subprocess.call(
             f"gams supply_chain/supply_chain.gms --solve={solve} --R={repeats} --N={number}",
