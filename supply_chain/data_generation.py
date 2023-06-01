@@ -17,11 +17,11 @@ def create_fixed_data(m):
 def create_variable_data(n, J, K, L, M):
     I = [f"i{x}" for x in range(1, n + 1)]
 
-    IJ = []
-    IK = []
-    JK = []
-    KL = []
-    LM = []
+    IJ = set()
+    IK = set()
+    JK = set()
+    KL = set()
+    LM = set()
     d = {(i, m): 0 for i in I for m in M}
 
     share = int(np.ceil(len(J) * 0.05))
@@ -31,15 +31,15 @@ def create_variable_data(n, J, K, L, M):
         for j in jj:
             kk = random.sample(K, k=share)
             for k in kk:
-                IK.append((i, k))
-                IJ.append((i, j))
-                JK.append((j, k))
+                IK.add((i, k))
+                IJ.add((i, j))
+                JK.add((j, k))
 
                 ll = random.sample(L, k=share)
                 for l in ll:
-                    KL.append((k, l))
+                    KL.add((k, l))
                     for m in M:
                         ll = random.sample
-                        LM.append((l, m))
+                        LM.add((l, m))
                         d[(i, m)] = random.randint(0, 100)
     return I, IJ, IK, JK, KL, LM, d
