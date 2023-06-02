@@ -32,7 +32,7 @@ def run_experiment(
     df_pyomo = create_data_frame()
 
     # define the x axis
-    N = list(incremental_range(100, cardinality_of_i + 1, 100, 100))
+    N = list(incremental_range(50, cardinality_of_i + 1, 20, 10))
 
     # create fixed data and convert to tuples and dicts
     J, K, L, M = data.create_fixed_data(m=cardinality_of_j)
@@ -84,23 +84,22 @@ def run_experiment(
             print_log_message(language="Intuitive Pyomo", n=n, df=df_intuitive_pyomo)
 
         # Pyomo
-        # if below_time_limit(df_pyomo, time_limit):
-        #     rr = run_pyomo(
-        #         I=I,
-        #         L=L,
-        #         M=M,
-        #         IJ=ij_tuple,
-        #         JK=jk_tuple,
-        #         IK=ik_tuple,
-        #         KL=kl_tuple,
-        #         LM=lm_tuple,
-        #         D=d_dict,
-        #         solve=solve,
-        #         repeats=repeats,
-        #         number=number,
-        #     )
-        #     df_pyomo = process_results(rr, df_pyomo)
-        #     print_log_message(language="Pyomo", n=n, df=df_pyomo)
+        if below_time_limit(df_pyomo, time_limit):
+            rr = run_pyomo(
+                I=I,
+                IK=ik_tuple,
+                IL=il_tuple,
+                IM=im_tuple,
+                IJK=ijk_tuple,
+                IKL=ikl_tuple,
+                ILM=ilm_tuple,
+                D=d_dict,
+                solve=solve,
+                repeats=repeats,
+                number=number,
+            )
+            df_pyomo = process_results(rr, df_pyomo)
+            print_log_message(language="Pyomo", n=n, df=df_pyomo)
 
     # JuMP
     df_jump, df_intuitive_jump = run_julia(solve, repeats, number, time_limit)
@@ -123,7 +122,7 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    CI = 10000
+    CI = 8000
     CJ = 20
 
     create_directories("supply_chain")
