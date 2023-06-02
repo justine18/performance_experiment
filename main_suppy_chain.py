@@ -55,6 +55,8 @@ def run_experiment(
             ilm_tuple,
             d_dict,
         ) = data.create_variable_data(n=n, J=J, K=K, L=L, M=M)
+        # make dictionaries
+        IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM = data.data_to_dicts(ik_tuple, il_tuple, im_tuple, ijk_tuple, ikl_tuple, ilm_tuple)
 
         # save data to json for JuMP
         save_to_json(ik_tuple, "IK", f"_{n}", "supply_chain")
@@ -93,6 +95,11 @@ def run_experiment(
                 IJK=ijk_tuple,
                 IKL=ikl_tuple,
                 ILM=ilm_tuple,
+                IK_IJK=IK_IJK, 
+                IK_IKL=IK_IKL,
+                IL_IKL=IL_IKL,
+                IL_ILM=IL_ILM,
+                IM_ILM=IM_ILM,
                 D=d_dict,
                 solve=solve,
                 repeats=repeats,

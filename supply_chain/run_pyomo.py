@@ -92,44 +92,7 @@ def intuitive_demand_rule(model, i, m):
 
 
 ########## Pyomo ##########
-def run_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number):
-    IK_IJK = {(i, k): [] for (i, k) in IK}
-    IK_IKL = {(i, k): [] for (i, k) in IK}
-    IL_IKL = {(i, l): [] for (i, l) in IL}
-    IL_ILM = {(i, l): [] for (i, l) in IL}
-    IM_ILM = {(i, m): [] for (i, m) in IM}
-
-    IK_IJK.update(
-        {
-            (i, k): list(group)
-            for (i, k), group in itertools.groupby(sorted(IJK), itemgetter(0, 2))
-        }
-    )
-    IK_IKL.update(
-        {
-            (i, k): list(group)
-            for (i, k), group in itertools.groupby(sorted(IKL), itemgetter(0, 1))
-        }
-    )
-    IL_IKL.update(
-        {
-            (i, l): list(group)
-            for (i, l), group in itertools.groupby(sorted(IKL), itemgetter(0, 2))
-        }
-    )
-    IL_ILM.update(
-        {
-            (i, l): list(group)
-            for (i, l), group in itertools.groupby(sorted(ILM), itemgetter(0, 1))
-        }
-    )
-    IM_ILM.update(
-        {
-            (i, m): list(group)
-            for (i, m), group in itertools.groupby(sorted(ILM), itemgetter(0, 2))
-        }
-    )
-
+def run_pyomo(I, IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve, repeats, number):
     setup = {
         "IK": IK,
         "IL": IL,
@@ -147,7 +110,7 @@ def run_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number):
         "model_function": pyomo,
     }
     r = timeit.repeat(
-        "model_function(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM,D, solve)",
+        "model_function(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve)",
         repeat=repeats,
         number=number,
         globals=setup,
