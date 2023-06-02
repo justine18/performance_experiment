@@ -32,50 +32,51 @@ def run_experiment(
     df_pyomo = create_data_frame()
 
     # define the x axis
-    N = list(incremental_range(100, cardinality_of_i + 1, 100, 100))
+    N = list(incremental_range(50, cardinality_of_i + 1, 20, 10))
 
     # create fixed data and convert to tuples and dicts
-    J, K, L, M, JK, KL, LM = data.create_fixed_data(m=cardinality_of_j)
-    jk_tuple, kl_tuple, lm_tuple = data.fixed_data_to_tuples(JK=JK, KL=KL, LM=LM)
+    J, K, L, M = data.create_fixed_data(m=cardinality_of_j)
 
     # save data to json for JuMP
     save_to_json(N, "N", "", "supply_chain")
     save_to_json(L, "L", "", "supply_chain")
     save_to_json(M, "M", "", "supply_chain")
-    save_to_json(jk_tuple, "JK", "", "supply_chain")
-    save_to_json(kl_tuple, "KL", "", "supply_chain")
-    save_to_json(lm_tuple, "LM", "", "supply_chain")
 
     # run experiment for every n in |I|
     for n in N:
         # create variable data and convert to tuples
-        I, IJ, IK, D = data.create_variable_data(n=n, J=J, K=K, M=M, LM=LM)
         (
-            IJ,
-            IK,
-            ij_tuple,
+            I,
             ik_tuple,
+            il_tuple,
+            im_tuple,
+            ijk_tuple,
+            ikl_tuple,
+            ilm_tuple,
             d_dict,
-        ) = data.validate_variable_data_and_convert_to_tuples(
-            IJ=IJ, JK=JK, IK=IK, KL=KL, D=D
-        )
+        ) = data.create_variable_data(n=n, J=J, K=K, L=L, M=M)
+        # make dictionaries
+        IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM = data.data_to_dicts(ik_tuple, il_tuple, im_tuple, ijk_tuple, ikl_tuple, ilm_tuple)
 
         # save data to json for JuMP
-        save_to_json(ij_tuple, "IJ", f"_{n}", "supply_chain")
         save_to_json(ik_tuple, "IK", f"_{n}", "supply_chain")
-        save_to_json_d(D, "D", f"_{n}", "supply_chain")
+        save_to_json(il_tuple, "IL", f"_{n}", "supply_chain")
+        save_to_json(im_tuple, "IM", f"_{n}", "supply_chain")
+        save_to_json(ijk_tuple, "IJK", f"_{n}", "supply_chain")
+        save_to_json(ikl_tuple, "IKL", f"_{n}", "supply_chain")
+        save_to_json(ilm_tuple, "ILM", f"_{n}", "supply_chain")
+        save_to_json_d(d_dict, "D", f"_{n}", "supply_chain")
 
         # Intuitive Pyomo
         if below_time_limit(df_intuitive_pyomo, time_limit):
             rr = run_intuitive_pyomo(
                 I=I,
-                L=L,
-                M=M,
-                IJ=ij_tuple,
-                JK=jk_tuple,
                 IK=ik_tuple,
-                KL=kl_tuple,
-                LM=lm_tuple,
+                IL=il_tuple,
+                IM=im_tuple,
+                IJK=ijk_tuple,
+                IKL=ikl_tuple,
+                ILM=ilm_tuple,
                 D=d_dict,
                 solve=solve,
                 repeats=repeats,
@@ -88,13 +89,17 @@ def run_experiment(
         if below_time_limit(df_pyomo, time_limit):
             rr = run_pyomo(
                 I=I,
-                L=L,
-                M=M,
-                IJ=ij_tuple,
-                JK=jk_tuple,
                 IK=ik_tuple,
-                KL=kl_tuple,
-                LM=lm_tuple,
+                IL=il_tuple,
+                IM=im_tuple,
+                IJK=ijk_tuple,
+                IKL=ikl_tuple,
+                ILM=ilm_tuple,
+                IK_IJK=IK_IJK, 
+                IK_IKL=IK_IKL,
+                IL_IKL=IL_IKL,
+                IL_ILM=IL_ILM,
+                IM_ILM=IM_ILM,
                 D=d_dict,
                 solve=solve,
                 repeats=repeats,
@@ -124,7 +129,7 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    CI = 10000
+    CI = 8000
     CJ = 20
 
     create_directories("supply_chain")

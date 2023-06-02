@@ -26,12 +26,13 @@ def create_directories(model):
 def save_to_json(symbol, name, i, model):
     file = os.path.join(model, "data", f"data_{name}{i}.json")
     with open(file, "w") as f:
-        json.dump(symbol, f)
+        json.dump(list(symbol), f)
 
 
-def save_to_json_d(df, name, i, model):
+def save_to_json_d(d, name, i, model):
     file = os.path.join(model, "data", f"data_{name}{i}.json")
-    df[["i", "m", "value"]].to_json(file, orient="values")
+    df = pd.DataFrame([(i, m, d[i, m]) for i, m in d], columns=["i", "m", "value"])
+    df.to_json(file, orient="values")
 
 
 def below_time_limit(df, limit):

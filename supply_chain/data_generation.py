@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import random
+import itertools
+from operator import itemgetter
 
 random.seed(13)
 
@@ -11,92 +13,115 @@ def create_fixed_data(m):
     K = [f"k{x}" for x in range(1, m + 1)]
     L = [f"l{x}" for x in range(1, m + 1)]
     M = [f"m{x}" for x in range(1, m + 1)]
-
-    JK = pd.DataFrame(
-        np.random.binomial(1, 0.05, size=(len(J) * len(K))),
-        index=pd.MultiIndex.from_product([J, K], names=["j", "k"]),
-        columns=["value"],
-    ).reset_index()
-    KL = pd.DataFrame(
-        np.random.binomial(1, 0.05, size=(len(K) * len(L))),
-        index=pd.MultiIndex.from_product([K, L], names=["k", "l"]),
-        columns=["value"],
-    ).reset_index()
-    lm = {m: random.choice(L) for m in M}
-    LM_dict = {"l": [], "m": [], "value": []}
-    for m in M:
-        for l in L:
-            LM_dict["m"].append(m)
-            LM_dict["l"].append(l)
-            if l in lm[m]:
-                LM_dict["value"].append(1)
-            else:
-                LM_dict["value"].append(0)
-    LM = pd.DataFrame(LM_dict)
-    return J, K, L, M, JK, KL, LM
+    return J, K, L, M
 
 
-def create_variable_data(n, J, K, M, LM):
+def create_variable_data(n, J, K, L, M):
     I = [f"i{x}" for x in range(1, n + 1)]
 
-    IJ = pd.DataFrame(
-        np.random.binomial(1, 0.05, size=(len(I) * len(J))),
-        index=pd.MultiIndex.from_product([I, J], names=["i", "j"]),
-        columns=["value"],
-    ).reset_index()
-    IK = pd.DataFrame(
-        np.random.binomial(1, 0.05, size=(len(I) * len(K))),
-        index=pd.MultiIndex.from_product([I, K], names=["i", "k"]),
-        columns=["value"],
-    ).reset_index()
-    D = pd.DataFrame(
-        np.random.randint(0, 100, size=(len(I) * len(M))),
-        index=pd.MultiIndex.from_product([I, M], names=["i", "m"]),
-        columns=["value"],
-    ).reset_index()
+    share = int(np.ceil(len(J) * 0.05))
 
-    return I, IJ, IK, D
+    # IJ
+    IJ = set()
+    # draw a set of units j able to process product i
+    IJ = set([(i, j) for i in I for j in random.sample(J, share)])
+    # make sure that every unit j is able to process at least one product i
+    used_j = set([j for i, j in IJ])
+    for j in J:
+        if not j in used_j:
+            IJ.add((random.choice(I), j))
+
+    # JK
+    JK = set([(j, k) for j in J for k in random.sample(K, share)])
+    # make sure that every unit j is able to process at least one product i
+    used_k = set([k for j, k in JK])
+    for k in K:
+        if not k in used_k:
+            JK.add((random.choice(J), k))
+
+    # IK
+    df_IJ = pd.DataFrame(IJ, columns=["i", "j"])
+    df_JK = pd.DataFrame(JK, columns=["j", "k"])
+    df_IJK = df_IJ.merge(right=df_JK, how="inner")
+    IJK = df_IJK.values.tolist()
+    # reduce IJK by around 50%
+    reduced_IJK = random.sample(IJK, int(np.ceil(len(IJK) * 0.5)))
+    IK = set([(i, k) for i, j, k in reduced_IJK])
+
+    # KL & LM
+    KL = set()
+    LM = set()
+    for k in K:
+        for m in M:
+            ll = random.sample(L, share)
+            for l in ll:
+                KL.add((k, l))
+                LM.add((l, m))
+    # does every l has a k
+    used_l = set([l for k, l in KL])
+    for l in L:
+        if not l in used_l:
+            KL.add((random.choice(K), l))
+    # does every l has an m
+    used_l = set([l for l, m in LM])
+    for l in L:
+        if not l in used_l:
+            LM.add((l, random.choice(M)))
+
+    # IL, IM
+    df_KL = pd.DataFrame(KL, columns=["k", "l"])
+    df_LM = pd.DataFrame(LM, columns=["l", "m"])
+    df_IJKLM = df_IJK.merge(right=df_KL, how="inner").merge(right=df_LM, how="inner")
+    IJKLM = df_IJKLM.values.tolist()
+    IL = set([(i, l) for i, j, k, l, m in IJKLM])
+    IM = set([(i, m) for i, j, k, l, m in IJKLM])
+
+    # IKL, ILM
+    IKL = set([(i, k, l) for i, j, k, l, m in IJKLM])
+    ILM = set([(i, l, m) for i, j, k, l, m in IJKLM])
+
+    # Demand
+    D = {(i, m): random.randint(0, 100) for i, m in IM}
+
+    return I, IK, IL, IM, IJK, IKL, ILM, D
 
 
-def validate_variable_data_and_convert_to_tuples(IJ, JK, IK, KL, D):
-    # check if there is at least one x variable
-    if (
-        IK[IK["value"] == 1]
-        .merge(right=IJ[IJ["value"] == 1])
-        .merge(right=JK[JK["value"] == 1])
-        .empty
-    ):
-        index = JK[JK["value"] == 1].index[0]
-        j = JK.iloc[index]["j"]
-        k = JK.iloc[index]["k"]
-        IJ.at[IJ.loc[(IJ["i"] == "i1") & (IJ["j"] == j)].index[0], "value"] = 1
-        IK.at[IK.loc[(IK["i"] == "i1") & (IK["k"] == k)].index[0], "value"] = 1
-    
-    # check if there is at least one y variable
-    if IK[IK["value"] == 1].merge(right=KL[KL["value"] == 1]).empty:
-        index = KL[KL["value"] == 1].index[0]
-        k = KL.iloc[index]["k"]
-        IK.at[IK.loc[(IK["i"] == "i1") & (IK["k"] == k)].index[0], "value"] = 1
-    
-    # convert to tuples
-    ij = [
-        tuple(x) for x in IJ.loc[IJ["value"] == 1][["i", "j"]].to_dict("split")["data"]
-    ]
-    ik = [
-        tuple(x) for x in IK.loc[IK["value"] == 1][["i", "k"]].to_dict("split")["data"]
-    ]
-    d = {(i, m): v for (i, m, v) in D[["i", "m", "value"]].to_dict("split")["data"]}
+def data_to_dicts(IK, IL, IM, IJK, IKL, ILM):
+    IK_IJK = {(i, k): [] for (i, k) in IK}
+    IK_IKL = {(i, k): [] for (i, k) in IK}
+    IL_IKL = {(i, l): [] for (i, l) in IL}
+    IL_ILM = {(i, l): [] for (i, l) in IL}
+    IM_ILM = {(i, m): [] for (i, m) in IM}
 
-    return IJ, IK, ij, ik, d
+    IK_IJK.update(
+        {
+            (i, k): list(group)
+            for (i, k), group in itertools.groupby(sorted(IJK), itemgetter(0, 2))
+        }
+    )
+    IK_IKL.update(
+        {
+            (i, k): list(group)
+            for (i, k), group in itertools.groupby(sorted(IKL), itemgetter(0, 1))
+        }
+    )
+    IL_IKL.update(
+        {
+            (i, l): list(group)
+            for (i, l), group in itertools.groupby(sorted(IKL), itemgetter(0, 2))
+        }
+    )
+    IL_ILM.update(
+        {
+            (i, l): list(group)
+            for (i, l), group in itertools.groupby(sorted(ILM), itemgetter(0, 1))
+        }
+    )
+    IM_ILM.update(
+        {
+            (i, m): list(group)
+            for (i, m), group in itertools.groupby(sorted(ILM), itemgetter(0, 2))
+        }
+    )
 
-def fixed_data_to_tuples(JK, KL, LM):
-    jk = [
-        tuple(x) for x in JK.loc[JK["value"] == 1][["j", "k"]].to_dict("split")["data"]
-    ]
-    kl = [
-        tuple(x) for x in KL.loc[KL["value"] == 1][["k", "l"]].to_dict("split")["data"]
-    ]
-    lm = [
-        tuple(x) for x in LM.loc[LM["value"] == 1][["l", "m"]].to_dict("split")["data"]
-    ]
-    return jk, kl, lm
+    return IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM
