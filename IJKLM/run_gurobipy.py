@@ -2,10 +2,17 @@ import timeit
 import pandas as pd
 import numpy as np
 import gurobipy as gpy
+import itertools
+import operator
 
 
 ########## Intuitive Gurobi ##########
-def run_intuitive_gurobi(I, IJK, JKL, KLM, solve, repeats, number):
+def run_intuitive_gurobi(I, ijk, jkl, klm, solve, repeats, number):
+    # convert sets to tuplelists
+    IJK = gpy.tuplelist(ijk)
+    JKL = gpy.tuplelist(jkl)
+    KLM = gpy.tuplelist(klm)
+
     setup = {
         "I": I,
         "IJK": IJK,
@@ -23,7 +30,6 @@ def run_intuitive_gurobi(I, IJK, JKL, KLM, solve, repeats, number):
 
     result = pd.DataFrame(
         {
-            "IJK": [len(IJK)],
             "I": [len(I)],
             "Language": ["Intuitive GurobiPy"],
             "MinTime": [np.min(r)],
@@ -37,17 +43,14 @@ def run_intuitive_gurobi(I, IJK, JKL, KLM, solve, repeats, number):
 def intuitive_gurobi(I, IJK, JKL, KLM, solve):
     model = gpy.Model()
 
-    x = model.addVars(
-        [
-            (i, j, k, l, m)
-            for (i, j, k) in IJK
-            for (jj, kk, l) in JKL
-            if (jj == j) and (kk == k)
-            for (kkk, ll, m) in KLM
-            if (kkk == k) and (ll == l)
-        ],
-        name="x",
-    )
+    x_list = [
+        (i, j, k, l, m)
+        for (i, j, k) in IJK.select("*", "*", "*")
+        for (j, k, l) in JKL.select(j, k, "*")
+        for (k, l, m) in KLM.select(k, l, "*")
+    ]
+
+    x = model.addVars(x_list, name="x")
 
     model.setObjective(1, gpy.GRB.MINIMIZE)
 
@@ -55,12 +58,9 @@ def intuitive_gurobi(I, IJK, JKL, KLM, solve):
         (
             gpy.quicksum(
                 x[i, j, k, l, m]
-                for (ii, j, k) in IJK
-                if (ii == i)
-                for (jj, kk, l) in JKL
-                if (jj == j) and (kk == k)
-                for (kkk, ll, m) in KLM
-                if (kkk == k) and (ll == l)
+                for (i, j, k) in IJK.select(i, "*", "*")
+                for (j, k, l) in JKL.select(j, k, "*")
+                for (k, l, m) in KLM.select(k, l, "*")
             )
             >= 0
             for i in I
@@ -100,7 +100,6 @@ def run_gurobi(I, ijk, jkl, klm, solve, repeats, number):
 
     result = pd.DataFrame(
         {
-            "IJK": [len(ijk)],
             "I": [len(I)],
             "Language": ["GurobiPy"],
             "MinTime": [np.min(r)],
@@ -123,19 +122,18 @@ def gurobi(I, IJK, JKL, KLM, solve):
 
     x = model.addVars(x_list, name="x")
 
+    constraint_dict_i = {i: [] for i in I}
+    constraint_dict_i.update(
+        {
+            i: list(j)
+            for i, j in itertools.groupby(sorted(x_list), operator.itemgetter(0))
+        }
+    )
+
     model.setObjective(1, gpy.GRB.MINIMIZE)
 
     model.addConstrs(
-        (
-            gpy.quicksum(
-                x[i, j, k, l, m]
-                for (i, j, k) in IJK.select(i, "*", "*")
-                for (j, k, l) in JKL.select(j, k, "*")
-                for (k, l, m) in KLM.select(k, l, "*")
-            )
-            >= 0
-            for i in I
-        ),
+        (gpy.quicksum(x[ijklm] for ijklm in constraint_dict_i[i]) >= 0 for i in I),
         "ei",
     )
 
