@@ -31,11 +31,11 @@ $$x_{i,j,k,l,m} \ge 0 \hspace{1cm} \forall \ (i,j,k) \in \mathcal{IJK}, l:(j,k,l
 
 $$\min F = 1$$
 
-$$\sum_{j:(i,j) \in \mathcal{IJ} \ \land \ (j,k) \in \mathcal{JK}} x_{ijk} \ge \sum_{l:(k,l) \in \mathcal{KL}} y_{ikl} \hspace{1cm} \forall \ (i,k) \in \mathcal{IK} $$
+$$\sum_{j:(i,j,k) \in \mathcal{IJK}} x_{ijk} \ge \sum_{l:(i,k,l) \in \mathcal{IKL}} y_{ikl} \hspace{1cm} \forall \ (i,k) \in \mathcal{IK} $$
 
-$$\sum_{k:(k,l) \in \mathcal{KL}} y_{ikl} \ge \sum_{m:(l,m) \in \mathcal{LM}} z_{ilm} \hspace{1cm} \forall \ (i,l) \in \mathcal{IL} $$
+$$\sum_{k:(i,k,l) \in \mathcal{IKL}} y_{ikl} \ge \sum_{m:(i,l,m) \in \mathcal{ILM}} z_{ilm} \hspace{1cm} \forall \ (i,l) \in \mathcal{IL} $$
 
-$$\sum_{l:(l,m) \in \mathcal{LM}} z_{ilm} \ge d_{im} \hspace{1cm} \forall \ (i,m) \in \mathcal{IM}$$
+$$\sum_{l:(i,l,m) \in \mathcal{ILM}} z_{ilm} \ge d_{im} \hspace{1cm} \forall \ (i,m) \in \mathcal{IM}$$
 
 | Sets                |             |
 | ------------------- | --------    |
