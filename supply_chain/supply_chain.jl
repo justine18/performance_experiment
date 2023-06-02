@@ -22,10 +22,63 @@ function read_variable_data(n)
     ILM = read_tuple_list("supply_chain/data/data_ILM_$n.json")
     d = read_tuple_list("supply_chain/data/data_D_$n.json")
     D = Dict()
-    for x in d
-        D[(x[1], x[2])] = x[3]
+    for (i, m, value) in d
+        D[(i, m)] = value
     end
     return IK, IL, IM, IJK, IKL, ILM, D
+end
+
+function convert_to_dict(IK, IL, IM, IJK, IKL, ILM)
+    ik_ijk = Dict()
+    ik_ikl = Dict()
+    for (i, k) in IK
+        ik_ijk_list = []
+        ik_ikl_list = []
+        for (ii, j, kk) in IJK
+            if ii == i && kk == k
+                push!(ik_ijk_list, (i, j, k))
+            end
+        end
+        for (ii, kk, l) in IKL
+            if ii == i && kk == k
+                push!(ik_ikl_list, (i, k, l))
+            end
+        end
+        ik_ijk[(i, k)] = ik_ijk_list
+        ik_ikl[(i, k)] = ik_ikl_list
+    end
+
+    il_ikl = Dict()
+    il_ilm = Dict()
+    for (i, l) in IL
+        il_ikl_list = []
+        il_ilm_list = []
+        for (ii, k, ll) in IKL
+            if ii == i && ll == l
+                push!(il_ikl_list, (i, k, l))
+            end
+        end
+        for (ii, ll, m) in ILM
+            if ii == i && ll == l
+                push!(il_ilm_list, (i, l, m))
+            end
+        end
+        il_ikl[(i, l)] = il_ikl_list
+        il_ilm[(i, l)] = il_ilm_list
+    end
+
+    im_ilm = Dict()
+    for (i,m) in IM
+        im_ilm_list = []
+        for (ii,l,mm) in ILM
+            if ii==i && mm ==m
+                push!(im_ilm_list, (i,l,m))
+            end
+        end
+        im_ilm[(i,m)] = im_ilm_list
+    end
+
+    return ik_ijk, ik_ikl, il_ikl, il_ilm, im_ilm
 end
 
 function intuitive_jump(IK, IL, IM, IJK, IKL, ILM, D, solve)
@@ -58,7 +111,7 @@ function intuitive_jump(IK, IL, IM, IJK, IKL, ILM, D, solve)
     end
 end
 
-function jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
+function jump(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve)
     model = if solve == "True"
         direct_model(Gurobi.Optimizer())
     else
@@ -67,43 +120,27 @@ function jump(I, L, M, IJ, JK, IK, KL, LM, D, solve)
 
     set_string_names_on_creation(model, false)
 
-    x_list = [
-        (i, j, k)
-        for (i, j) in IJ
-        for (jj, k) in JK if jj == j
-        for (ii, kk) in IK if ii == i && kk == k
-    ]
-
-    y_list = [
-        (i, k, l)
-        for i in I
-        for (k, l) in KL
-    ]
-
-    z_list = [(i, l, m) for i in I for (l, m) in LM]
-
-    @variable(model, x[x_list] >= 0)
-    @variable(model, y[y_list] >= 0)
-    @variable(model, z[z_list] >= 0)
+    @variable(model, x[IJK] >= 0)
+    @variable(model, y[IKL] >= 0)
+    @variable(model, z[ILM] >= 0)
 
     for (i, k) in IK
         @constraint(model,
             sum(
-                x[(i, j, k)]
-                for (ii, j) in IJ if ii == i
-                for (jj, kk) in JK if jj == j && kk == k
-            ) >= sum(y[(i, k, l)] for (kk, l) in KL if kk == k)
-        )
+                x[ijk] for ijk in IK_IJK[(i, k)]
+            ) >= sum(y[ikl] for ikl in IK_IKL[(i, k)]))
     end
 
-    for i in I, l in L
-        @constraint(model,
-            sum(y[(i, k, l)] for (k, ll) in KL if ll == l) >=
-            sum(z[(i, l, m)] for (ll, m) in LM if ll == l))
+    for (i, l) in IL
+        @constraint(model, sum(
+            y[ikl] for ikl in IL_IKL[(i, l)]
+        ) >= sum(z[ilm] for ilm in IL_ILM[(i, l)]))
     end
 
-    for i in I, m in M
-        @constraint(model, sum(z[(i, l, m)] for (l, mm) in LM if mm == m) >= D[i, m])
+    for (i, m) in IM
+        @constraint(model, sum(
+            z[ilm] for ilm in IM_ILM[(i,m)]
+        ) >= D[i, m])
     end
 
     if solve == "True"
@@ -130,12 +167,13 @@ tt = DataFrame(I=Int[], Language=String[], MinTime=Float64[], MeanTime=Float64[]
 
 for n in N
     IK, IL, IM, IJK, IKL, ILM, D = read_variable_data(n)
+    IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM = convert_to_dict(IK, IL, IM, IJK, IKL, ILM)
 
-    # if maximum(t.MinTime; init=0) < time_limit
-    #     r = @benchmark jump($I, $L, $M, $IJ, $JK, $IK, $KL, $LM, $D, $solve) samples = samples evals = evals
-    #     push!(t, (n, "JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
-    #     println("JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
-    # end
+    if maximum(t.MinTime; init=0) < time_limit
+        r = @benchmark jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $IK_IJK, $IK_IKL, $IL_IKL, $IL_ILM, $IM_ILM, $D, $solve) samples = samples evals = evals
+        push!(t, (n, "JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
+        println("JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
+    end
 
     if maximum(tt.MinTime; init=0) < time_limit
         rr = @benchmark intuitive_jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $D, $solve) samples = samples evals = evals
