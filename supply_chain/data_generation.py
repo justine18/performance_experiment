@@ -43,9 +43,9 @@ def create_variable_data(n, J, K, L, M):
     df_IJ = pd.DataFrame(IJ, columns=["i", "j"])
     df_JK = pd.DataFrame(JK, columns=["j", "k"])
     df_IJK = df_IJ.merge(right=df_JK, how="inner")
-    IJK = df_IJK.values.tolist()
+    IJK = set(map(tuple, df_IJK.values))
     # reduce IJK by around 50%
-    reduced_IJK = random.sample(IJK, int(np.ceil(len(IJK) * 0.5)))
+    reduced_IJK = random.sample(sorted(IJK), int(np.ceil(len(IJK) * 0.5)))
     IK = set([(i, k) for i, j, k in reduced_IJK])
 
     # KL & LM
