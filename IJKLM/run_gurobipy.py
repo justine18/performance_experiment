@@ -132,10 +132,12 @@ def gurobi(I, IJK, JKL, KLM, solve):
 
     model.setObjective(1, gpy.GRB.MINIMIZE)
 
-    model.addConstrs(
-        (gpy.quicksum(x[ijklm] for ijklm in constraint_dict_i[i]) >= 0 for i in I),
-        "ei",
-    )
+    for i in I:
+        if constraint_dict_i[i]:
+            model.addConstr(
+                (gpy.quicksum(x[ijklm] for ijklm in constraint_dict_i[i]) >= 0),
+                "ei",
+            )
 
     model.update()
 
