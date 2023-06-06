@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import random
+import itertools
+from operator import itemgetter
 
 random.seed(13)
 
@@ -41,9 +43,9 @@ def create_variable_data(n, J, K, L, M):
     df_IJ = pd.DataFrame(IJ, columns=["i", "j"])
     df_JK = pd.DataFrame(JK, columns=["j", "k"])
     df_IJK = df_IJ.merge(right=df_JK, how="inner")
-    IJK = df_IJK.values.tolist()
+    IJK = set(map(tuple, df_IJK.values))
     # reduce IJK by around 50%
-    reduced_IJK = random.sample(IJK, int(np.ceil(len(IJK) * 0.5)))
+    reduced_IJK = random.sample(sorted(IJK), int(np.ceil(len(IJK) * 0.5)))
     IK = set([(i, k) for i, j, k in reduced_IJK])
 
     # KL & LM
@@ -82,3 +84,44 @@ def create_variable_data(n, J, K, L, M):
     D = {(i, m): random.randint(0, 100) for i, m in IM}
 
     return I, IK, IL, IM, IJK, IKL, ILM, D
+
+
+def data_to_dicts(IK, IL, IM, IJK, IKL, ILM):
+    IK_IJK = {(i, k): [] for (i, k) in IK}
+    IK_IKL = {(i, k): [] for (i, k) in IK}
+    IL_IKL = {(i, l): [] for (i, l) in IL}
+    IL_ILM = {(i, l): [] for (i, l) in IL}
+    IM_ILM = {(i, m): [] for (i, m) in IM}
+
+    IK_IJK.update(
+        {
+            (i, k): list(group)
+            for (i, k), group in itertools.groupby(sorted(IJK), itemgetter(0, 2))
+        }
+    )
+    IK_IKL.update(
+        {
+            (i, k): list(group)
+            for (i, k), group in itertools.groupby(sorted(IKL), itemgetter(0, 1))
+        }
+    )
+    IL_IKL.update(
+        {
+            (i, l): list(group)
+            for (i, l), group in itertools.groupby(sorted(IKL), itemgetter(0, 2))
+        }
+    )
+    IL_ILM.update(
+        {
+            (i, l): list(group)
+            for (i, l), group in itertools.groupby(sorted(ILM), itemgetter(0, 1))
+        }
+    )
+    IM_ILM.update(
+        {
+            (i, m): list(group)
+            for (i, m), group in itertools.groupby(sorted(ILM), itemgetter(0, 2))
+        }
+    )
+
+    return IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM
