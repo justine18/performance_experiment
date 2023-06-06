@@ -37,7 +37,7 @@ def run_experiment(
     df_gams = create_data_frame()
 
     # define the x axis
-    N = list(incremental_range(50, cardinality_of_i + 1, 20, 10))
+    N = list(incremental_range(50, cardinality_of_i + 1, 50, 50))
 
     # create fixed data and convert to tuples and dicts
     J, K, L, M = data.create_fixed_data(m=cardinality_of_j)
@@ -205,7 +205,7 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    CI = 1000
+    CI = 8000
     CJ = 20
 
     create_directories("supply_chain")

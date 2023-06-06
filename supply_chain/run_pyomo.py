@@ -3,9 +3,6 @@ import logging
 import timeit
 import pandas as pd
 import numpy as np
-import itertools
-from collections import defaultdict
-from operator import itemgetter
 
 logging.getLogger("pyomo.core").setLevel(logging.ERROR)
 
@@ -161,7 +158,7 @@ def pyomo(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, 
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model, timelimit=0)
+        opt.solve(model, options={'TimeLimit': 0}, load_solutions=False)
 
 
 def production_rule(model, i, k):
