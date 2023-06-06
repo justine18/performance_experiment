@@ -65,7 +65,7 @@ def intuitive_pyomo(I, IJK, JKL, KLM, solve):
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model, timelimit=0)
+        opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
 def intuitive_ei_rule(model, i):
@@ -143,7 +143,7 @@ def pyomo(I, IJK, JKL, KLM, solve):
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model, timelimit=0)
+        opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
 def ei_rule(model, i):

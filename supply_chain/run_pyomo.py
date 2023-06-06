@@ -66,7 +66,7 @@ def intuitive_pyomo(IK, IL, IM, IJK, IKL, ILM, D, solve):
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model, timelimit=0)
+        opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
 def intuitive_production_rule(model, i, k):
@@ -158,7 +158,7 @@ def pyomo(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, 
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
-        opt.solve(model, options={'TimeLimit': 0}, load_solutions=False)
+        opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
 def production_rule(model, i, k):
