@@ -21,62 +21,45 @@ function read_variable_data(n)
     IKL = read_tuple_list("supply_chain/data/data_IKL_$n.json")
     ILM = read_tuple_list("supply_chain/data/data_ILM_$n.json")
     d = read_tuple_list("supply_chain/data/data_D_$n.json")
-    D = Dict()
-    for (i, m, value) in d
-        D[(i, m)] = value
-    end
+    D = Dict((i, m) => value for (i, m, value) in d)
     return IK, IL, IM, IJK, IKL, ILM, D
 end
 
-function convert_to_dict(IK, IL, IM, IJK, IKL, ILM)
-    ik_ijk = Dict()
-    ik_ikl = Dict()
-    for (i, k) in IK
-        ik_ijk_list = []
-        ik_ikl_list = []
-        for (ii, j, kk) in IJK
-            if ii == i && kk == k
-                push!(ik_ijk_list, (i, j, k))
-            end
-        end
-        for (ii, kk, l) in IKL
-            if ii == i && kk == k
-                push!(ik_ikl_list, (i, k, l))
-            end
-        end
-        ik_ijk[(i, k)] = ik_ijk_list
-        ik_ikl[(i, k)] = ik_ikl_list
+function convert_df_to_dict(groups)
+    dict = Dict{Tuple{String,String},Vector{Tuple{String,String,String}}}()
+    for key in keys(groups)
+        dict[values(key)] = Tuple.(Tables.namedtupleiterator(groups[key]))
     end
+    return dict
+end
 
-    il_ikl = Dict()
-    il_ilm = Dict()
-    for (i, l) in IL
-        il_ikl_list = []
-        il_ilm_list = []
-        for (ii, k, ll) in IKL
-            if ii == i && ll == l
-                push!(il_ikl_list, (i, k, l))
-            end
-        end
-        for (ii, ll, m) in ILM
-            if ii == i && ll == l
-                push!(il_ilm_list, (i, l, m))
-            end
-        end
-        il_ikl[(i, l)] = il_ikl_list
-        il_ilm[(i, l)] = il_ilm_list
-    end
+function convert_to_DF(IJK, IKL, ILM)
+    ijk_df = DataFrame(IJK)
+    rename!(ijk_df, [:i, :j, :k])
+    ikl_df = DataFrame(IKL)
+    rename!(ikl_df, [:i, :k, :l])
+    ilm_df = DataFrame(ILM)
+    rename!(ilm_df, [:i, :l, :m])
 
-    im_ilm = Dict()
-    for (i,m) in IM
-        im_ilm_list = []
-        for (ii,l,mm) in ILM
-            if ii==i && mm ==m
-                push!(im_ilm_list, (i,l,m))
-            end
-        end
-        im_ilm[(i,m)] = im_ilm_list
-    end
+    # ik_ijk
+    gd = groupby(ijk_df, [:i, :k])
+    ik_ijk = convert_df_to_dict(gd)
+
+    # ik_ikl
+    gd = groupby(ikl_df, [:i, :k])
+    ik_ikl = convert_df_to_dict(gd)
+
+    # il_ikl
+    gd = groupby(ikl_df, [:i, :l])
+    il_ikl = convert_df_to_dict(gd)
+
+    # il_ilm
+    gd = groupby(ilm_df, [:i, :l])
+    il_ilm = convert_df_to_dict(gd)
+
+    # im_ilm
+    gd = groupby(ilm_df, [:i, :m])
+    im_ilm = convert_df_to_dict(gd)
 
     return ik_ijk, ik_ikl, il_ikl, il_ilm, im_ilm
 end
@@ -139,7 +122,7 @@ function jump(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM,
 
     for (i, m) in IM
         @constraint(model, sum(
-            z[ilm] for ilm in IM_ILM[(i,m)]
+            z[ilm] for ilm in IM_ILM[(i, m)]
         ) >= D[i, m])
     end
 
@@ -167,7 +150,7 @@ tt = DataFrame(I=Int[], Language=String[], MinTime=Float64[], MeanTime=Float64[]
 
 for n in N
     IK, IL, IM, IJK, IKL, ILM, D = read_variable_data(n)
-    IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM = convert_to_dict(IK, IL, IM, IJK, IKL, ILM)
+    IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM = convert_to_DF(IJK, IKL, ILM)
 
     if maximum(t.MinTime; init=0) < time_limit
         r = @benchmark jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $IK_IJK, $IK_IKL, $IL_IKL, $IL_ILM, $IM_ILM, $D, $solve) samples = samples evals = evals
