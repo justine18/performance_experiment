@@ -7,8 +7,8 @@ import numpy as np
 logging.getLogger("pyomo.core").setLevel(logging.ERROR)
 
 
-########## Intuitive Pyomo ##########
-def run_intuitive_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number):
+########## Pyomo ##########
+def run_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number):
     setup = {
         "IK": IK,
         "IL": IL,
@@ -18,7 +18,7 @@ def run_intuitive_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number)
         "ILM": ILM,
         "D": D,
         "solve": solve,
-        "model_function": intuitive_pyomo,
+        "model_function": pyomo,
     }
     r = timeit.repeat(
         "model_function(IK, IL, IM, IJK, IKL, ILM, D, solve)",
@@ -30,7 +30,7 @@ def run_intuitive_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number)
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["Intuitive Pyomo"],
+            "Language": ["Pyomo"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
@@ -39,7 +39,7 @@ def run_intuitive_pyomo(I, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number)
     return result
 
 
-def intuitive_pyomo(IK, IL, IM, IJK, IKL, ILM, D, solve):
+def pyomo(IK, IL, IM, IJK, IKL, ILM, D, solve):
     model = pyo.ConcreteModel()
 
     model.IK = pyo.Set(initialize=IK)
@@ -58,9 +58,9 @@ def intuitive_pyomo(IK, IL, IM, IJK, IKL, ILM, D, solve):
 
     model.OBJ = pyo.Objective(expr=model.f)
 
-    model.production = pyo.Constraint(model.IK, rule=intuitive_production_rule)
-    model.transport = pyo.Constraint(model.IL, rule=intuitive_transport_rule)
-    model.demand = pyo.Constraint(model.IM, rule=intuitive_demand_rule)
+    model.production = pyo.Constraint(model.IK, rule=production_rule)
+    model.transport = pyo.Constraint(model.IL, rule=transport_rule)
+    model.demand = pyo.Constraint(model.IM, rule=demand_rule)
 
     # model.write("int.lp")
 
@@ -69,27 +69,27 @@ def intuitive_pyomo(IK, IL, IM, IJK, IKL, ILM, D, solve):
         opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
-def intuitive_production_rule(model, i, k):
+def production_rule(model, i, k):
     return sum(
         model.x[i, j, k] for (ii, j, kk) in model.IJK if ii == i and kk == k
     ) >= sum(model.y[i, k, l] for (ii, kk, l) in model.IKL if ii == i and kk == k)
 
 
-def intuitive_transport_rule(model, i, l):
+def transport_rule(model, i, l):
     return sum(
         model.y[i, k, l] for (ii, k, ll) in model.IKL if ii == i and ll == l
     ) >= sum(model.z[i, l, m] for (ii, ll, m) in model.ILM if ii == i and ll == l)
 
 
-def intuitive_demand_rule(model, i, m):
+def demand_rule(model, i, m):
     return (
         sum(model.z[i, l, m] for (ii, l, mm) in model.ILM if ii == i and mm == m)
         >= model.d[i, m]
     )
 
 
-########## Pyomo ##########
-def run_pyomo(
+########## Fast Pyomo ##########
+def run_fast_pyomo(
     I,
     IK,
     IL,
@@ -121,7 +121,7 @@ def run_pyomo(
         "IM_ILM": IM_ILM,
         "D": D,
         "solve": solve,
-        "model_function": pyomo,
+        "model_function": fast_pyomo,
     }
     r = timeit.repeat(
         "model_function(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve)",
@@ -133,7 +133,7 @@ def run_pyomo(
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["Pyomo"],
+            "Language": ["Fast Pyomo"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
@@ -142,7 +142,7 @@ def run_pyomo(
     return result
 
 
-def pyomo(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve):
+def fast_pyomo(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve):
     model = pyo.ConcreteModel()
 
     model.IK = pyo.Set(initialize=IK)
@@ -167,9 +167,9 @@ def pyomo(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, 
 
     model.OBJ = pyo.Objective(expr=model.f)
 
-    model.production = pyo.Constraint(model.IK, rule=production_rule)
-    model.transport = pyo.Constraint(model.IL, rule=transport_rule)
-    model.demand = pyo.Constraint(model.IM, rule=demand_rule)
+    model.production = pyo.Constraint(model.IK, rule=fast_production_rule)
+    model.transport = pyo.Constraint(model.IL, rule=fast_transport_rule)
+    model.demand = pyo.Constraint(model.IM, rule=fast_demand_rule)
 
     # model.write("int.lp")
 
@@ -178,19 +178,19 @@ def pyomo(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, 
         opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
-def production_rule(model, i, k):
+def fast_production_rule(model, i, k):
     return sum(model.x[ijk] for ijk in model.IK_IJK[i, k]) >= sum(
         model.y[ikl] for ikl in model.IK_IKL[i, k]
     )
 
 
-def transport_rule(model, i, l):
+def fast_transport_rule(model, i, l):
     return sum(model.y[ikl] for ikl in model.IL_IKL[i, l]) >= sum(
         model.z[ilm] for ilm in model.IL_ILM[i, l]
     )
 
 
-def demand_rule(model, i, m):
+def fast_demand_rule(model, i, m):
     return sum(model.z[ilm] for ilm in model.IM_ILM[i, m]) >= model.d[i, m]
 
 
@@ -257,9 +257,9 @@ def cartesian_pyomo(I, J, K, L, M, IK, IL, IM, IJK, IKL, ILM, D, solve):
 
     model.OBJ = pyo.Objective(expr=model.f)
 
-    model.production = pyo.Constraint(model.IK, rule=intuitive_production_rule)
-    model.transport = pyo.Constraint(model.IL, rule=intuitive_transport_rule)
-    model.demand = pyo.Constraint(model.IM, rule=intuitive_demand_rule)
+    model.production = pyo.Constraint(model.IK, rule=production_rule)
+    model.transport = pyo.Constraint(model.IL, rule=transport_rule)
+    model.demand = pyo.Constraint(model.IM, rule=demand_rule)
 
     # model.write("int.lp")
 

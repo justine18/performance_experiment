@@ -12,14 +12,14 @@ def run_julia(solve, repeats, number, time_limit):
     print("\nJulia done")
 
     file = (
+        os.path.join("supply_chain", "results", "fast_jump_results_solve.json")
+        if solve
+        else os.path.join("supply_chain", "results", "fast_jump_results_model.json")
+    )
+    file2 = (
         os.path.join("supply_chain", "results", "jump_results_solve.json")
         if solve
         else os.path.join("supply_chain", "results", "jump_results_model.json")
-    )
-    file2 = (
-        os.path.join("supply_chain", "results", "intuitive_jump_results_solve.json")
-        if solve
-        else os.path.join("supply_chain", "results", "intuitive_jump_results_model.json")
     )
 
     with open(file, "r") as f:

@@ -14,7 +14,7 @@ from help import (
     save_results,
 )
 
-from IJKLM.run_pyomo import run_cartesian_pyomo, run_intuitive_pyomo
+from IJKLM.run_pyomo import run_cartesian_pyomo, run_pyomo
 
 
 ############## Experiment ##########################
@@ -42,7 +42,7 @@ def run_experiment(
 
         # Intuitive Pyomo
         if below_time_limit(df_intuitive_pyomo, time_limit):
-            rr = run_intuitive_pyomo(
+            rr = run_pyomo(
                 I=I,
                 IJK=ijk_tuple,
                 JKL=jkl_tuple,

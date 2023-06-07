@@ -15,9 +15,9 @@ from help import (
     print_log_message,
     save_results,
 )
-from supply_chain.run_gurobipy import run_intuitive_gurobi, run_gurobi
+from supply_chain.run_gurobipy import run_gurobi, run_fast_gurobi
 from supply_chain.run_gams import run_gams
-from supply_chain.run_pyomo import run_intuitive_pyomo, run_pyomo
+from supply_chain.run_pyomo import run_pyomo, run_fast_pyomo
 from supply_chain.run_jump import run_julia
 
 
@@ -29,11 +29,11 @@ def run_experiment(
 
     # create empty frames for results
     df_jump = create_data_frame()
-    df_intuitive_jump = create_data_frame()
-    df_intuitive_pyomo = create_data_frame()
+    df_fast_jump = create_data_frame()
     df_pyomo = create_data_frame()
-    df_intuitive_gurobi = create_data_frame()
+    df_fast_pyomo = create_data_frame()
     df_gurobi = create_data_frame()
+    df_fast_gurobi = create_data_frame()
     df_gams = create_data_frame()
 
     # define the x axis
@@ -74,9 +74,9 @@ def run_experiment(
         save_to_json(ilm_tuple, "ILM", f"_{n}", "supply_chain")
         save_to_json_d(d_dict, "D", f"_{n}", "supply_chain")
 
-        # Intuitive GurobiPy
-        if below_time_limit(df_intuitive_gurobi, time_limit):
-            rr = run_intuitive_gurobi(
+        # GurobiPy
+        if below_time_limit(df_gurobi, time_limit):
+            rr = run_gurobi(
                 I=I,
                 ik=ik_tuple,
                 il=il_tuple,
@@ -89,14 +89,14 @@ def run_experiment(
                 repeats=repeats,
                 number=number,
             )
-            df_intuitive_gurobi = process_results(rr, df_intuitive_gurobi)
+            df_gurobi = process_results(rr, df_gurobi)
             print_log_message(
-                language="Intuitive GurobiPy", n=n, df=df_intuitive_gurobi
+                language="GurobiPy", n=n, df=df_gurobi
             )
 
-        # GurobiPy
-        if below_time_limit(df_gurobi, time_limit):
-            rr = run_gurobi(
+        # Fast GurobiPy
+        if below_time_limit(df_fast_gurobi, time_limit):
+            rr = run_fast_gurobi(
                 I=I,
                 ik=ik_tuple,
                 il=il_tuple,
@@ -114,8 +114,8 @@ def run_experiment(
                 repeats=repeats,
                 number=number,
             )
-            df_gurobi = process_results(rr, df_gurobi)
-            print_log_message(language="GurobiPy", n=n, df=df_gurobi)
+            df_fast_gurobi = process_results(rr, df_fast_gurobi)
+            print_log_message(language="Fast GurobiPy", n=n, df=df_fast_gurobi)
 
         # GAMS
         if below_time_limit(df_gams, time_limit):
@@ -140,9 +140,9 @@ def run_experiment(
             df_gams = process_results(rr, df_gams)
             print_log_message(language="GAMS", n=n, df=df_gams)
 
-        # Intuitive Pyomo
-        if below_time_limit(df_intuitive_pyomo, time_limit):
-            rr = run_intuitive_pyomo(
+        # Pyomo
+        if below_time_limit(df_pyomo, time_limit):
+            rr = run_pyomo(
                 I=I,
                 IK=ik_tuple,
                 IL=il_tuple,
@@ -155,12 +155,12 @@ def run_experiment(
                 repeats=repeats,
                 number=number,
             )
-            df_intuitive_pyomo = process_results(rr, df_intuitive_pyomo)
-            print_log_message(language="Intuitive Pyomo", n=n, df=df_intuitive_pyomo)
+            df_pyomo = process_results(rr, df_pyomo)
+            print_log_message(language="Pyomo", n=n, df=df_pyomo)
 
-        # Pyomo
-        if below_time_limit(df_pyomo, time_limit):
-            rr = run_pyomo(
+        # Fast Pyomo
+        if below_time_limit(df_fast_pyomo, time_limit):
+            rr = run_fast_pyomo(
                 I=I,
                 IK=ik_tuple,
                 IL=il_tuple,
@@ -178,21 +178,21 @@ def run_experiment(
                 repeats=repeats,
                 number=number,
             )
-            df_pyomo = process_results(rr, df_pyomo)
-            print_log_message(language="Pyomo", n=n, df=df_pyomo)
+            df_fast_pyomo = process_results(rr, df_fast_pyomo)
+            print_log_message(language="Fast Pyomo", n=n, df=df_fast_pyomo)
 
     # JuMP
-    df_jump, df_intuitive_jump = run_julia(solve, repeats, number, time_limit)
+    df_fast_jump, df_jump = run_julia(solve, repeats, number, time_limit)
 
     # merge all results
     df = pd.concat(
         [
             df_jump,
-            df_intuitive_jump,
-            df_intuitive_pyomo,
+            df_fast_jump,
             df_pyomo,
-            df_intuitive_gurobi,
+            df_fast_pyomo,
             df_gurobi,
+            df_fast_gurobi,
             df_gams
         ]
     ).reset_index(drop=True)

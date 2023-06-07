@@ -64,7 +64,7 @@ function convert_to_DF(IJK, IKL, ILM)
     return ik_ijk, ik_ikl, il_ikl, il_ilm, im_ilm
 end
 
-function intuitive_jump(IK, IL, IM, IJK, IKL, ILM, D, solve)
+function jump(IK, IL, IM, IJK, IKL, ILM, D, solve)
     model = Model()
 
     @variable(model, x[IJK] >= 0)
@@ -94,7 +94,7 @@ function intuitive_jump(IK, IL, IM, IJK, IKL, ILM, D, solve)
     end
 end
 
-function jump(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve)
+function fast_jump(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve)
     model = if solve == "True"
         direct_model(Gurobi.Optimizer())
     else
@@ -153,24 +153,24 @@ for n in N
     IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM = convert_to_DF(IJK, IKL, ILM)
 
     if maximum(t.MinTime; init=0) < time_limit
-        r = @benchmark jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $IK_IJK, $IK_IKL, $IL_IKL, $IL_ILM, $IM_ILM, $D, $solve) samples = samples evals = evals
-        push!(t, (n, "JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
-        println("JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
+        r = @benchmark fast_jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $IK_IJK, $IK_IKL, $IL_IKL, $IL_ILM, $IM_ILM, $D, $solve) samples = samples evals = evals
+        push!(t, (n, "Fast JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
+        println("Fast JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
     end
 
     if maximum(tt.MinTime; init=0) < time_limit
-        rr = @benchmark intuitive_jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $D, $solve) samples = samples evals = evals
-        push!(tt, (n, "Intuitive JuMP", minimum(rr.times) / 1e9, mean(rr.times) / 1e9, median(rr.times) / 1e9))
-        println("Intuitive JuMP done $n in $(round(minimum(rr.times) / 1e9, digits=2))s")
+        rr = @benchmark jump($IK, $IL, $IM, $IJK, $IKL, $ILM, $D, $solve) samples = samples evals = evals
+        push!(tt, (n, "JuMP", minimum(rr.times) / 1e9, mean(rr.times) / 1e9, median(rr.times) / 1e9))
+        println("JuMP done $n in $(round(minimum(rr.times) / 1e9, digits=2))s")
     end
 end
 
 if solve == "True"
-    file = "supply_chain/results/jump_results_solve.json"
-    file2 = "supply_chain/results/intuitive_jump_results_solve.json"
+    file = "supply_chain/results/fast_jump_results_solve.json"
+    file2 = "supply_chain/results/jump_results_solve.json"
 else
-    file = "supply_chain/results/jump_results_model.json"
-    file2 = "supply_chain/results/intuitive_jump_results_model.json"
+    file = "supply_chain/results/fast_jump_results_model.json"
+    file2 = "supply_chain/results/jump_results_model.json"
 end
 
 open(file, "w") do f

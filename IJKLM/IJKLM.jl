@@ -21,7 +21,7 @@ function read_variable_data(n)
     return I, IJK
 end
 
-function intuitive_jump(I, IJK, JKL, KLM, solve)
+function jump(I, IJK, JKL, KLM, solve)
     model = Model()
 
     x_list = [
@@ -49,7 +49,7 @@ function intuitive_jump(I, IJK, JKL, KLM, solve)
     end
 end
 
-function jump(I, IJK, JKL, KLM, solve)
+function fast_jump(I, IJK, JKL, KLM, solve)
     model = if solve == "True"
         direct_model(Gurobi.Optimizer())
     else
@@ -101,24 +101,24 @@ for n in N
     I, IJK = read_variable_data(n)
 
     if maximum(t.MinTime; init=0) < time_limit
-        r = @benchmark jump($I, $IJK, $JKL, $KLM, $solve) samples = samples evals = evals
-        push!(t, (n, "JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
-        println("JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
+        r = @benchmark fast_jump($I, $IJK, $JKL, $KLM, $solve) samples = samples evals = evals
+        push!(t, (n, "Fast JuMP", minimum(r.times) / 1e9, mean(r.times) / 1e9, median(r.times) / 1e9))
+        println("Fast JuMP done $n in $(round(minimum(r.times) / 1e9, digits=2))s")
     end
 
     if maximum(tt.MinTime; init=0) < time_limit
-        rr = @benchmark intuitive_jump($I, $IJK, $JKL, $KLM, $solve) samples = samples evals = evals
-        push!(tt, (n, "Intuitive JuMP", minimum(rr.times) / 1e9, mean(rr.times) / 1e9, median(rr.times) / 1e9))
-        println("Intuitive JuMP done $n in $(round(minimum(rr.times) / 1e9, digits=2))s")
+        rr = @benchmark jump($I, $IJK, $JKL, $KLM, $solve) samples = samples evals = evals
+        push!(tt, (n, "JuMP", minimum(rr.times) / 1e9, mean(rr.times) / 1e9, median(rr.times) / 1e9))
+        println("JuMP done $n in $(round(minimum(rr.times) / 1e9, digits=2))s")
     end
 end
 
 if solve == "True"
-    file = "IJKLM/results/jump_results_solve.json"
-    file2 = "IJKLM/results/intuitive_jump_results_solve.json"
+    file = "IJKLM/results/fast_jump_results_solve.json"
+    file2 = "IJKLM/results/jump_results_solve.json"
 else
-    file = "IJKLM/results/jump_results_model.json"
-    file2 = "IJKLM/results/intuitive_jump_results_model.json"
+    file = "IJKLM/results/fast_jump_results_model.json"
+    file2 = "IJKLM/results/jump_results_model.json"
 end
 
 open(file, "w") do f

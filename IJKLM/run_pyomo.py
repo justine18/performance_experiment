@@ -8,15 +8,15 @@ import itertools, operator
 logging.getLogger("pyomo.core").setLevel(logging.ERROR)
 
 
-########## Intuitive Pyomo ##########
-def run_intuitive_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
+########## Pyomo ##########
+def run_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
     setup = {
         "I": I,
         "IJK": IJK,
         "JKL": JKL,
         "KLM": KLM,
         "solve": solve,
-        "model_function": intuitive_pyomo,
+        "model_function": pyomo,
     }
     r = timeit.repeat(
         "model_function(I, IJK, JKL, KLM, solve)",
@@ -37,7 +37,7 @@ def run_intuitive_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
     return result
 
 
-def intuitive_pyomo(I, IJK, JKL, KLM, solve):
+def pyomo(I, IJK, JKL, KLM, solve):
     model = pyo.ConcreteModel()
 
     model.I = pyo.Set(initialize=I)
@@ -61,14 +61,14 @@ def intuitive_pyomo(I, IJK, JKL, KLM, solve):
 
     model.OBJ = pyo.Objective(expr=model.z)
 
-    model.ei = pyo.Constraint(model.I, rule=intuitive_ei_rule)
+    model.ei = pyo.Constraint(model.I, rule=ei_rule)
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
         opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
-def intuitive_ei_rule(model, i):
+def ei_rule(model, i):
     lhs = [
         model.x[i, j, k, l, m]
         for (ii, j, k) in model.IJK
@@ -84,15 +84,15 @@ def intuitive_ei_rule(model, i):
         return sum(lhs) >= 0
 
 
-########## Pyomo ##########
-def run_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
+########## Fast Pyomo ##########
+def run_fast_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
     setup = {
         "I": I,
         "IJK": IJK,
         "JKL": JKL,
         "KLM": KLM,
         "solve": solve,
-        "model_function": pyomo,
+        "model_function": fast_pyomo,
     }
     r = timeit.repeat(
         "model_function(I, IJK, JKL, KLM, solve)",
@@ -104,7 +104,7 @@ def run_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["Pyomo"],
+            "Language": ["Fast Pyomo"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
@@ -113,7 +113,7 @@ def run_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
     return result
 
 
-def pyomo(I, IJK, JKL, KLM, solve):
+def fast_pyomo(I, IJK, JKL, KLM, solve):
     model = pyo.ConcreteModel()
 
     model.I = pyo.Set(initialize=I)
@@ -139,20 +139,20 @@ def pyomo(I, IJK, JKL, KLM, solve):
 
     model.OBJ = pyo.Objective(expr=model.z)
 
-    model.ei = pyo.Constraint(model.I, rule=ei_rule)
+    model.ei = pyo.Constraint(model.I, rule=fast_ei_rule)
 
     if solve:
         opt = pyo.SolverFactory("gurobi")
         opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
 
 
-def ei_rule(model, i):
+def fast_ei_rule(model, i):
     if not model.c_dict_i[i]:
         return pyo.Constraint.Skip
     return sum(model.x[idx] for idx in model.c_dict_i[i]) >= 0
 
 
-########## Intuitive Pyomo ##########
+########## Cartesian Pyomo ##########
 def run_cartesian_pyomo(I, J, K, L, M, IJK, JKL, KLM, solve, repeats, number):
     setup = {
         "I": I,
@@ -210,7 +210,7 @@ def cartesian_pyomo(I, J, K, L, M, IJK, JKL, KLM, solve):
 
     model.OBJ = pyo.Objective(expr=model.z)
 
-    model.ei = pyo.Constraint(model.I, rule=intuitive_ei_rule)
+    model.ei = pyo.Constraint(model.I, rule=ei_rule)
 
     if solve:
         opt = pyo.SolverFactory("gurobi")

@@ -4,8 +4,8 @@ import numpy as np
 import gurobipy as gpy
 
 
-########## Intuitive Gurobi ##########
-def run_intuitive_gurobi(I, ik, il, im, ijk, ikl, ilm, D, solve, repeats, number):
+########## Gurobi ##########
+def run_gurobi(I, ik, il, im, ijk, ikl, ilm, D, solve, repeats, number):
     # convert sets to tuplelists
     IK = gpy.tuplelist(ik)
     IL = gpy.tuplelist(il)
@@ -24,7 +24,7 @@ def run_intuitive_gurobi(I, ik, il, im, ijk, ikl, ilm, D, solve, repeats, number
         "ILM": ILM,
         "D": d,
         "solve": solve,
-        "model_function": intuitive_gurobi,
+        "model_function": gurobi,
     }
     r = timeit.repeat(
         "model_function(IK, IL, IM, IJK, IKL, ILM, D, solve)",
@@ -36,7 +36,7 @@ def run_intuitive_gurobi(I, ik, il, im, ijk, ikl, ilm, D, solve, repeats, number
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["Intuitive GurobiPy"],
+            "Language": ["GurobiPy"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
@@ -45,7 +45,7 @@ def run_intuitive_gurobi(I, ik, il, im, ijk, ikl, ilm, D, solve, repeats, number
     return result
 
 
-def intuitive_gurobi(IK, IL, IM, IJK, IKL, ILM, d, solve):
+def gurobi(IK, IL, IM, IJK, IKL, ILM, d, solve):
     model = gpy.Model()
 
     x = model.addVars(IJK, name="x")
@@ -79,8 +79,8 @@ def intuitive_gurobi(IK, IL, IM, IJK, IKL, ILM, d, solve):
         model.optimize()
 
 
-########## Gurobi ##########
-def run_gurobi(
+########## Fast Gurobi ##########
+def run_fast_gurobi(
     I,
     ik,
     il,
@@ -105,8 +105,7 @@ def run_gurobi(
     IJK = gpy.tuplelist(ijk)
     IKL = gpy.tuplelist(ikl)
     ILM = gpy.tuplelist(ilm)
-    # IK_IJK = gpy.tupledict(ik_ijk)
-    # IK_IKL = gpy.tupledict(ik_ikl)
+
     setup = {
         "IK": IK,
         "IL": IL,
@@ -121,7 +120,7 @@ def run_gurobi(
         "IM_ILM": im_ilm,
         "D": D,
         "solve": solve,
-        "model_function": gurobi,
+        "model_function": fast_gurobi,
     }
     r = timeit.repeat(
         "model_function(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve)",
@@ -133,7 +132,7 @@ def run_gurobi(
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["GurobiPy"],
+            "Language": ["Fast GurobiPy"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
@@ -142,7 +141,7 @@ def run_gurobi(
     return result
 
 
-def gurobi(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, d, solve):
+def fast_gurobi(IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, d, solve):
     model = gpy.Model()
 
     x = model.addVars(IJK, name="x")
