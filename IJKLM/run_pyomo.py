@@ -150,3 +150,68 @@ def ei_rule(model, i):
     if not model.c_dict_i[i]:
         return pyo.Constraint.Skip
     return sum(model.x[idx] for idx in model.c_dict_i[i]) >= 0
+
+
+########## Intuitive Pyomo ##########
+def run_cartesian_pyomo(I, J, K, L, M, IJK, JKL, KLM, solve, repeats, number):
+    setup = {
+        "I": I,
+        "J": J,
+        "K": K,
+        "L": L,
+        "M": M,
+        "IJK": IJK,
+        "JKL": JKL,
+        "KLM": KLM,
+        "solve": solve,
+        "model_function": cartesian_pyomo,
+    }
+    r = timeit.repeat(
+        "model_function(I, J, K, L, M, IJK, JKL, KLM, solve)",
+        repeat=repeats,
+        number=number,
+        globals=setup,
+    )
+
+    result = pd.DataFrame(
+        {
+            "I": [len(I)],
+            "Language": ["Cartesian Pyomo"],
+            "MinTime": [np.min(r)],
+            "MeanTime": [np.mean(r)],
+            "MedianTime": [np.median(r)],
+        }
+    )
+    return result
+
+
+def cartesian_pyomo(I, J, K, L, M, IJK, JKL, KLM, solve):
+    model = pyo.ConcreteModel()
+
+    model.I = pyo.Set(initialize=I)
+    model.J = pyo.Set(initialize=J)
+    model.K = pyo.Set(initialize=K)
+    model.L = pyo.Set(initialize=L)
+    model.M = pyo.Set(initialize=M)
+    model.IJK = pyo.Set(initialize=IJK)
+    model.JKL = pyo.Set(initialize=JKL)
+    model.KLM = pyo.Set(initialize=KLM)
+
+    model.z = pyo.Param(default=1)
+
+    model.x = pyo.Var(
+        model.I,
+        model.J,
+        model.K,
+        model.L,
+        model.M,
+        domain=pyo.NonNegativeReals,
+    )
+
+    model.OBJ = pyo.Objective(expr=model.z)
+
+    model.ei = pyo.Constraint(model.I, rule=intuitive_ei_rule)
+
+    if solve:
+        opt = pyo.SolverFactory("gurobi")
+        opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)

@@ -89,7 +89,24 @@ def intuitive_demand_rule(model, i, m):
 
 
 ########## Pyomo ##########
-def run_pyomo(I, IK, IL, IM, IJK, IKL, ILM, IK_IJK, IK_IKL, IL_IKL, IL_ILM, IM_ILM, D, solve, repeats, number):
+def run_pyomo(
+    I,
+    IK,
+    IL,
+    IM,
+    IJK,
+    IKL,
+    ILM,
+    IK_IJK,
+    IK_IKL,
+    IL_IKL,
+    IL_ILM,
+    IM_ILM,
+    D,
+    solve,
+    repeats,
+    number,
+):
     setup = {
         "IK": IK,
         "IL": IL,
@@ -175,3 +192,77 @@ def transport_rule(model, i, l):
 
 def demand_rule(model, i, m):
     return sum(model.z[ilm] for ilm in model.IM_ILM[i, m]) >= model.d[i, m]
+
+
+########## Cartesian Pyomo ##########
+def run_cartesian_pyomo(
+    I, J, K, L, M, IK, IL, IM, IJK, IKL, ILM, D, solve, repeats, number
+):
+    setup = {
+        "I": I,
+        "J": J,
+        "K": K,
+        "L": L,
+        "M": M,
+        "IK": IK,
+        "IL": IL,
+        "IM": IM,
+        "IJK": IJK,
+        "IKL": IKL,
+        "ILM": ILM,
+        "D": D,
+        "solve": solve,
+        "model_function": cartesian_pyomo,
+    }
+    r = timeit.repeat(
+        "model_function(I, J, K, L, M, IK, IL, IM, IJK, IKL, ILM, D, solve)",
+        repeat=repeats,
+        number=number,
+        globals=setup,
+    )
+
+    result = pd.DataFrame(
+        {
+            "I": [len(I)],
+            "Language": ["Cartesian Pyomo"],
+            "MinTime": [np.min(r)],
+            "MeanTime": [np.mean(r)],
+            "MedianTime": [np.median(r)],
+        }
+    )
+    return result
+
+
+def cartesian_pyomo(I, J, K, L, M, IK, IL, IM, IJK, IKL, ILM, D, solve):
+    model = pyo.ConcreteModel()
+
+    model.I = pyo.Set(initialize=I)
+    model.J = pyo.Set(initialize=J)
+    model.K = pyo.Set(initialize=K)
+    model.L = pyo.Set(initialize=L)
+    model.M = pyo.Set(initialize=M)
+    model.IK = pyo.Set(initialize=IK)
+    model.IL = pyo.Set(initialize=IL)
+    model.IM = pyo.Set(initialize=IM)
+    model.IJK = pyo.Set(initialize=IJK)
+    model.IKL = pyo.Set(initialize=IKL)
+    model.ILM = pyo.Set(initialize=ILM)
+
+    model.f = pyo.Param(default=1)
+    model.d = pyo.Param(model.IM, initialize=D)
+
+    model.x = pyo.Var(model.I, model.J, model.K, domain=pyo.NonNegativeReals)
+    model.y = pyo.Var(model.I, model.K, model.L, domain=pyo.NonNegativeReals)
+    model.z = pyo.Var(model.I, model.L, model.M, domain=pyo.NonNegativeReals)
+
+    model.OBJ = pyo.Objective(expr=model.f)
+
+    model.production = pyo.Constraint(model.IK, rule=intuitive_production_rule)
+    model.transport = pyo.Constraint(model.IL, rule=intuitive_transport_rule)
+    model.demand = pyo.Constraint(model.IM, rule=intuitive_demand_rule)
+
+    # model.write("int.lp")
+
+    if solve:
+        opt = pyo.SolverFactory("gurobi")
+        opt.solve(model, options={"TimeLimit": 0}, load_solutions=False)
