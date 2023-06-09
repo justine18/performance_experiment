@@ -32,13 +32,13 @@ def data_to_gams(I, J, K, L, M, ijk, jkl, klm):
 def run_gams(solve, N, repeats, number):
     if solve:
         subprocess.call(
-            f"gams IJKLM/IJKLM.gms --R={repeats} --N={number}",
+            f"gams IJKLM/IJKLM.gms --solve={solve} --R={repeats} --N={number}",
             stderr=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
         )
     else:
         subprocess.call(
-            f"gams IJKLM/IJKLM.gms --solve={solve} --R={repeats} --N={number}",
+            f"gams IJKLM/IJKLM.gms --R={repeats} --N={number}",
             stderr=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
         )

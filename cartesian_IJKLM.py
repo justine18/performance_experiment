@@ -24,7 +24,7 @@ def run_experiment(
     np.random.seed(13)
 
     # create empty frames for results
-    df_intuitive_pyomo = create_data_frame()
+    df_pyomo = create_data_frame()
     df_cartesian_pyomo = create_data_frame()
 
     # define the x axis
@@ -40,8 +40,8 @@ def run_experiment(
         I, IJK = data.create_variable_data(n=n, j=J, k=K)
         ijk_tuple = data.variable_data_to_tuples(IJK=IJK)
 
-        # Intuitive Pyomo
-        if below_time_limit(df_intuitive_pyomo, time_limit):
+        # Pyomo
+        if below_time_limit(df_pyomo, time_limit):
             rr = run_pyomo(
                 I=I,
                 IJK=ijk_tuple,
@@ -51,8 +51,8 @@ def run_experiment(
                 repeats=repeats,
                 number=number,
             )
-            df_intuitive_pyomo = process_results(rr, df_intuitive_pyomo)
-            print_log_message(language="Intuitive Pyomo", n=n, df=df_intuitive_pyomo)
+            df_pyomo = process_results(rr, df_pyomo)
+            print_log_message(language="Pyomo", n=n, df=df_pyomo)
 
         # Cartesian Pyomo
         if below_time_limit(df_cartesian_pyomo, time_limit):
@@ -73,7 +73,7 @@ def run_experiment(
             print_log_message(language="Cartesian Pyomo", n=n, df=df_cartesian_pyomo)
 
     # merge all results
-    df = pd.concat([df_intuitive_pyomo, df_cartesian_pyomo]).reset_index(drop=True)
+    df = pd.concat([df_pyomo, df_cartesian_pyomo]).reset_index(drop=True)
 
     # save results
     save_results(df, solve, "cartesian_IJKLM")

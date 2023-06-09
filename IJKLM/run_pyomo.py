@@ -28,7 +28,7 @@ def run_pyomo(I, IJK, JKL, KLM, solve, repeats, number):
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["Intuitive Pyomo"],
+            "Language": ["Pyomo"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],

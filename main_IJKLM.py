@@ -36,7 +36,7 @@ def run_experiment(
     df_gams = create_data_frame()
 
     # define the x axis
-    N = list(incremental_range(100, cardinality_of_i + 1, 100, 100))
+    N = list(incremental_range(100, cardinality_of_i + 1, 200, 100))
 
     # create fixed data and convert to tuples and dicts
     J, K, L, M, JKL, KLM = data.create_fixed_data(m=cardinality_of_j)
@@ -130,17 +130,17 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    CI = 2000
+    CI = 400000
     CJ = 20
 
     create_directories("IJKLM")
-
-    for solve in [False, True]:
-        run_experiment(
-            cardinality_of_i=CI,
-            cardinality_of_j=CJ,
-            solve=solve,
-            repeats=3,
-            number=1,
-            time_limit=60,
-        )
+    solve = True
+    # for solve in [False, True]:
+    run_experiment(
+        cardinality_of_i=CI,
+        cardinality_of_j=CJ,
+        solve=solve,
+        repeats=3,
+        number=1,
+        time_limit=60,
+    )
