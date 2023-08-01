@@ -48,7 +48,7 @@ def fast_linopy(IJK, JKL, KLM, solve):
     model = linopy.Model()
 
     x = model.add_variables(lower=0, mask=mask, name='x')
-    z = model.add_variables(name='z')
+    z = model.add_variables(lower=0, name='z')
     
     model.add_objective(1 * z)
 
