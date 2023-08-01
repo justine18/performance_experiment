@@ -5,6 +5,8 @@ import numpy as np
 import linopy
 from contextlib import redirect_stdout, redirect_stderr
 import os
+
+
 ########## Linopy ##########
 def run_linopy(I, ijk_tuple, jkl_tuple, klm_tuple, solve, repeats, number):
     # convert sets to dataframes
@@ -30,7 +32,7 @@ def run_linopy(I, ijk_tuple, jkl_tuple, klm_tuple, solve, repeats, number):
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["LinoPy"],
+            "Language": ["linopy"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
@@ -48,14 +50,16 @@ def fast_linopy(IJK, JKL, KLM, solve):
 
     model = linopy.Model()
 
-    x = model.add_variables(lower=0, mask=mask, name='x')
-    z = model.add_variables(lower=0, name='z')
-    
+    x = model.add_variables(lower=0, mask=mask, name="x")
+    z = model.add_variables(lower=0, name="z")
+
     model.add_objective(1 * z)
 
-    model.add_constraints(x.sum("JKLM") >= 0, name='ei')
+    model.add_constraints(x.sum("JKLM") >= 0, name="ei")
 
     if solve:
         # TODO: set time limit to zero
-        with open(os.devnull, 'w') as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
+        with open(os.devnull, "w") as devnull, redirect_stdout(
+            devnull
+        ), redirect_stderr(devnull):
             model.solve()

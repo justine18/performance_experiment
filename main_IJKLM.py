@@ -120,7 +120,7 @@ def run_experiment(
                 number=number,
             )
             df_linopy = process_results(rr, df_linopy)
-            print_log_message(language="LinoPy", n=n, df=df_linopy)
+            print_log_message(language="linopy", n=n, df=df_linopy)
 
     # JuMP
     df_fast_jump, df_jump = run_julia(solve, repeats, number, time_limit)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     CJ = 20
 
     create_directories("IJKLM")
-    solve = True
+    solve = False
     # for solve in [False, True]:
     run_experiment(
         cardinality_of_i=CI,
