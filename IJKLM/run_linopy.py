@@ -3,7 +3,8 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import linopy
-
+from contextlib import redirect_stdout, redirect_stderr
+import os
 ########## Linopy ##########
 def run_linopy(I, ijk_tuple, jkl_tuple, klm_tuple, solve, repeats, number):
     # convert sets to dataframes
@@ -56,5 +57,5 @@ def fast_linopy(IJK, JKL, KLM, solve):
 
     if solve:
         # TODO: set time limit to zero
-        # TODO: suppress logs
-        model.solve()
+        with open(os.devnull, 'w') as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
+            model.solve()

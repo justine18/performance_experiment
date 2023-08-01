@@ -1,12 +1,12 @@
 # Performance Experiment
 
-This repository tries to make a fair comparison between the performance of Pyomo, GurobiPy, GAMS, LinoPy, and JuMP. Performance is measured in model generation time and model generation plus solve time.
+This repository tries to make a fair comparison between the performance of Pyomo, GurobiPy, GAMS, Linopy, and JuMP. Performance is measured in model generation time and model generation plus solve time.
 
 - Python 3.11.3
 - Pyomo 6.6.0
 - Julia 1.9.0
 - JuMP 1.11.1
-- LinoPy 0.2.3 
+- Linopy 0.2.3 
 - GAMS 43.2
 
 ## Example IJKLM
