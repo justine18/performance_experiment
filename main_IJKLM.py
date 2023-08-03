@@ -34,7 +34,7 @@ def run_experiment(
     df_fast_pyomo = create_data_frame()
     df_gurobi = create_data_frame()
     df_fast_gurobi = create_data_frame()
-    df_linopy = create_data_frame()
+    df_fast_linopy = create_data_frame()
     df_gams = create_data_frame()
 
     # define the x axis
@@ -109,7 +109,7 @@ def run_experiment(
             print_log_message(language="Fast Pyomo", n=n, df=df_fast_pyomo)
 
         # Linopy
-        if below_time_limit(df_linopy, time_limit):
+        if below_time_limit(df_fast_linopy, time_limit):
             rr = run_linopy(
                 I=I,
                 ijk_tuple=ijk_tuple,
@@ -119,8 +119,8 @@ def run_experiment(
                 repeats=repeats,
                 number=number,
             )
-            df_linopy = process_results(rr, df_linopy)
-            print_log_message(language="linopy", n=n, df=df_linopy)
+            df_fast_linopy = process_results(rr, df_fast_linopy)
+            print_log_message(language="Fast linopy", n=n, df=df_fast_linopy)
 
     # JuMP
     df_fast_jump, df_jump = run_julia(solve, repeats, number, time_limit)
@@ -135,7 +135,16 @@ def run_experiment(
             df_gurobi,
             df_fast_gurobi,
             df_gams,
-            df_linopy
+            df_fast_linopy
+        ]
+    ).reset_index(drop=True)
+
+    df_fast = pd.concat(
+        [
+            df_fast_jump,
+            df_fast_pyomo,
+            df_fast_gurobi,
+            df_fast_linopy
         ]
     ).reset_index(drop=True)
 
@@ -144,6 +153,7 @@ def run_experiment(
 
     # plot results
     visualization.plot_results(df, cardinality_of_j, solve, "IJKLM")
+    visualization.plot_results(df_fast, cardinality_of_j, solve, "IJKLM FAST")
 
 
 if __name__ == "__main__":
@@ -151,13 +161,13 @@ if __name__ == "__main__":
     CJ = 20
 
     create_directories("IJKLM")
-    solve = False
-    # for solve in [False, True]:
-    run_experiment(
-        cardinality_of_i=CI,
-        cardinality_of_j=CJ,
-        solve=solve,
-        repeats=3,
-        number=1,
-        time_limit=60,
-    )
+    # solve = False
+    for solve in [False, True]:
+        run_experiment(
+            cardinality_of_i=CI,
+            cardinality_of_j=CJ,
+            solve=solve,
+            repeats=3,
+            number=1,
+            time_limit=60,
+        )

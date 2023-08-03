@@ -32,7 +32,7 @@ def run_linopy(I, ijk_tuple, jkl_tuple, klm_tuple, solve, repeats, number):
     result = pd.DataFrame(
         {
             "I": [len(I)],
-            "Language": ["linopy"],
+            "Language": ["Fast linopy"],
             "MinTime": [np.min(r)],
             "MeanTime": [np.mean(r)],
             "MedianTime": [np.median(r)],
