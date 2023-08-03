@@ -48,7 +48,7 @@ def fast_linopy(IJK, JKL, KLM, solve):
 
     model = linopy.Model()
 
-    x = model.add_variables(lower=0, mask=mask, name='x')
+    x = model.add_variables(lower=0, coords=mask.coords, mask=mask, name='x')
     z = model.add_variables(lower=0, name='z')
     
     model.add_objective(1 * z)
@@ -58,4 +58,8 @@ def fast_linopy(IJK, JKL, KLM, solve):
     if solve:
         # TODO: set time limit to zero
         with open(os.devnull, 'w') as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
-            model.solve()
+            try:
+                # temp fix, linopy tries to retrieve solution from a timed-out problem
+                model.solve(TimeLimit=0)
+            except AttributeError:
+                pass
