@@ -2,7 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def plot_results(df, cardinality_of_j, solve, model):
+def plot_results(df, cardinality_of_j, solve, model, suffix):
     # Apply the default theme
     sns.set_theme(
         style="ticks",
@@ -12,10 +12,10 @@ def plot_results(df, cardinality_of_j, solve, model):
     )
 
     if solve:
-        filename = f"solve_performance.png"
+        filename = f"solve_performance_{suffix}.png"
         y_label = "Time [s]"
     else:
-        filename = f"model_performance.png"
+        filename = f"model_performance_{suffix}.png"
         y_label = f"Model Generation Time [s]"
 
     # Plot

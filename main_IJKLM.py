@@ -144,7 +144,8 @@ def run_experiment(
             df_fast_jump,
             df_fast_pyomo,
             df_fast_gurobi,
-            df_fast_linopy
+            df_fast_linopy,
+            df_gams
         ]
     ).reset_index(drop=True)
 
@@ -152,8 +153,8 @@ def run_experiment(
     save_results(df, solve, "IJKLM")
 
     # plot results
-    visualization.plot_results(df, cardinality_of_j, solve, "IJKLM")
-    visualization.plot_results(df_fast, cardinality_of_j, solve, "IJKLM FAST")
+    visualization.plot_results(df, cardinality_of_j, solve, "IJKLM", 'all')
+    visualization.plot_results(df_fast, cardinality_of_j, solve, "IJKLM", 'fast')
 
 
 if __name__ == "__main__":
