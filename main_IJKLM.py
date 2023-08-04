@@ -18,6 +18,7 @@ from IJKLM.run_gurobipy import run_gurobi, run_fast_gurobi
 from IJKLM.run_gams import data_to_gams, run_gams
 from IJKLM.run_pyomo import run_pyomo, run_fast_pyomo
 from IJKLM.run_jump import run_julia
+from IJKLM.run_linopy import run_linopy
 
 
 ############## Experiment ##########################
@@ -33,6 +34,7 @@ def run_experiment(
     df_fast_pyomo = create_data_frame()
     df_gurobi = create_data_frame()
     df_fast_gurobi = create_data_frame()
+    df_fast_linopy = create_data_frame()
     df_gams = create_data_frame()
 
     # define the x axis
@@ -106,6 +108,20 @@ def run_experiment(
             df_fast_pyomo = process_results(rr, df_fast_pyomo)
             print_log_message(language="Fast Pyomo", n=n, df=df_fast_pyomo)
 
+        # Linopy
+        if below_time_limit(df_fast_linopy, time_limit):
+            rr = run_linopy(
+                I=I,
+                ijk_tuple=ijk_tuple,
+                jkl_tuple=jkl_tuple,
+                klm_tuple=klm_tuple,
+                solve=solve,
+                repeats=repeats,
+                number=number,
+            )
+            df_fast_linopy = process_results(rr, df_fast_linopy)
+            print_log_message(language="Fast linopy", n=n, df=df_fast_linopy)
+
     # JuMP
     df_fast_jump, df_jump = run_julia(solve, repeats, number, time_limit)
 
@@ -118,6 +134,17 @@ def run_experiment(
             df_fast_pyomo,
             df_gurobi,
             df_fast_gurobi,
+            df_gams,
+            df_fast_linopy
+        ]
+    ).reset_index(drop=True)
+
+    df_fast = pd.concat(
+        [
+            df_fast_jump,
+            df_fast_pyomo,
+            df_fast_gurobi,
+            df_fast_linopy,
             df_gams
         ]
     ).reset_index(drop=True)
@@ -126,21 +153,22 @@ def run_experiment(
     save_results(df, solve, "IJKLM")
 
     # plot results
-    visualization.plot_results(df, cardinality_of_j, solve, "IJKLM")
+    visualization.plot_results(df, cardinality_of_j, solve, "IJKLM", 'all')
+    visualization.plot_results(df_fast, cardinality_of_j, solve, "IJKLM", 'fast')
 
 
 if __name__ == "__main__":
-    CI = 400000
+    CI = 2000
     CJ = 20
 
     create_directories("IJKLM")
-    solve = True
-    # for solve in [False, True]:
-    run_experiment(
-        cardinality_of_i=CI,
-        cardinality_of_j=CJ,
-        solve=solve,
-        repeats=3,
-        number=1,
-        time_limit=60,
-    )
+    # solve = False
+    for solve in [False, True]:
+        run_experiment(
+            cardinality_of_i=CI,
+            cardinality_of_j=CJ,
+            solve=solve,
+            repeats=3,
+            number=1,
+            time_limit=60,
+        )

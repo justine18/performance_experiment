@@ -1,11 +1,13 @@
-# Performance Experiment - Pyomo vs JuMP
+# Performance Experiment
 
-This repository tries to make a fair comparison between the performance of Pyomo and JuMP. Performance is measured in model generation time and model generation plus solve time.
+This repository tries to make a fair comparison between the performance of Pyomo, GurobiPy, GAMS, Linopy, and JuMP. Performance is measured in model generation time and model generation plus solve time.
 
 - Python 3.11.3
 - Pyomo 6.6.0
 - Julia 1.9.0
 - JuMP 1.11.1
+- linopy 0.2.3 
+- GAMS 43.2
 
 ## Example IJKLM
 
@@ -19,11 +21,13 @@ $$x_{i,j,k,l,m} \ge 0 \hspace{1cm} \forall \ (i,j,k) \in \mathcal{IJK}, l:(j,k,l
 
 ### Model Generation Performance
 
-![Alt text](plots/IJKLM/model_performance.png)
+![Alt text](plots/IJKLM/model_performance_all.png)
+![Alt text](plots/IJKLM/model_performance_fast.png)
 
 ### Model Generation + Solve Performance
 
-![Alt text](plots/IJKLM/solve_performance.png)
+![Alt text](plots/IJKLM/solve_performance_all.png)
+![Alt text](plots/IJKLM/solve_performance_fast.png)
 
 ## Example Supply Chain
 
